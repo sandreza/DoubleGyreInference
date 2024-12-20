@@ -1,0 +1,8 @@
+name = "DoubleGyreInference"
+uuid = "fb175c47-285b-424e-8135-cd6a2b35b4a9"
+authors = ["sandre "]
+version = "0.1.0"
+
+[deps]
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
