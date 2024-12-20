@@ -1,4 +1,4 @@
-using CairoMakie, Statistics, Random
+using CairoMakie, Statistics, Random, LinearAlgebra
 Random.seed!(1234)
 
 function symmetric_quantile_range(data, q)
@@ -36,22 +36,24 @@ for field_index in 1:4
     ax = Axis(fig[field_index, 2]; title = "Sample Average")
     field = tupled_data.averaged_samples_2[:, :, field_index]
     heatmap!(ax, lons, lats, field; colormap = colors[field_index], colorrange = field_range, interpolate = false)
-    ax = Axis(fig[field_index, 3]; title = "Sample Standard Deviation")
+
+    ax = Axis(fig[field_index, 3]; title = "Sample Average - Ground Truth")
+    field = tupled_data.field_2[:, :, field_index] - tupled_data.averaged_samples_2[:, :, field_index]
+    field_range = symmetric_quantile_range(tupled_data.field_2, qu)
+    heatmap!(ax, lons, lats, field; colormap = :balance, colorrange = field_range, interpolate = false)
+
+    ax = Axis(fig[field_index, 4]; title = "Sample Standard Deviation")
     field = tupled_data.std_samples_2[:, :, field_index]
     field_range_std =  clipped_quantile_range(field, qu)
     heatmap!(ax, lons, lats, field; colormap = :viridis, colorrange = field_range_std, interpolate = false)
 
-
-    ax = Axis(fig[field_index, 4]; title = "Sample 1")
+    ax = Axis(fig[field_index, 5]; title = "Sample 1")
     field = tupled_data.samples_2[:, :, field_index, 1]
     heatmap!(ax, lons, lats, field; colormap = colors[field_index], colorrange = field_range, interpolate = false)
-    ax = Axis(fig[field_index, 5]; title = "Sample 2")
+    ax = Axis(fig[field_index, 6]; title = "Sample 2")
     field = tupled_data.samples_2[:, :, field_index, 2]
     heatmap!(ax, lons, lats, field; colormap = colors[field_index], colorrange = field_range, interpolate = false)
+    
 
-    ax = Axis(fig[field_index, 6]; title = "Sample Average - Ground Truth")
-    field = tupled_data.field_2[:, :, field_index] - tupled_data.averaged_samples_2[:, :, field_index]
-    field_range = symmetric_quantile_range(tupled_data.field_2, qu)
-    heatmap!(ax, lons, lats, field; colormap = :balance, colorrange = field_range, interpolate = false)
 end
-save("Figures/fields_level_index_$(level_index).png", fig)
+save("Figures/fields_level_index_$(level_index)_factor_$(factor).png", fig)
