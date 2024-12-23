@@ -33,7 +33,7 @@ for i in eachindex(levels)
     for state_index in eachindex(1:4)
         level = levels[i]
         depth_string = @sprintf("%0.f", abs(zlevels[level]))
-        ax = Axis(fig[state_index, 8 - i]; title = state_names[state_index] * " at Depth = " * depth_string * " [m]", xlabel = "Time (months)", ylabel = state_names[state_index] * " [" * units[state_index] * "]")
+        ax = Axis(fig[state_index, length(levels) + 1 - i]; title = state_names[state_index] * " at Depth = " * depth_string * " [m]", xlabel = "Time (months)", ylabel = state_names[state_index] * " [" * units[state_index] * "]")
         lines!(ax, 1:N1-1, averages[1:N1-1, level, state_index]; color = :blue, label = "Spin Up")
         lines!(ax, N1:N2, averages[N1:N2, level, state_index]; color = :red, label = "Training Data")
         lines!(ax, N2+1:size(averages, 1), averages[N2+1:end, level, state_index]; color = :orange, label = "Test Data")
