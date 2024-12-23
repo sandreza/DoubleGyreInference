@@ -31,6 +31,8 @@ field_1 = total_field[:, :, :, sample_index_1]
 field_2 = total_field[:, :, :, sample_index_2]
 mean_field = mean(total_field[:, :,:,  1:N], dims = 4)
 std_field = std(total_field[:, :,:,  1:N], dims = 4)
-zlevel = read(hfile["zlevel"])
+
 close(hfile)
 tupled_data = (; field_1, field_2, averaged_samples_1, averaged_samples_2, std_samples_1, std_samples_2, context_field_1, context_field_2, samples_1, samples_2, sample_index_1, sample_index_2)
+
+

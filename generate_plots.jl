@@ -47,6 +47,11 @@ factor = 1
 include("load_data.jl")
 include("preliminary_plot_data.jl")
 
+level_index = 7
+factor = 16
+include("load_data.jl")
+include("preliminary_plot_data.jl")
+
 
 fig = Figure() 
 fieldnames = ["U", "V", "W", "T"]
