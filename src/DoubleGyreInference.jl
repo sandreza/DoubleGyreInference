@@ -4,6 +4,7 @@ using HDF5, Statistics
 
 export return_samples_file
 export return_data_file
+export return_scale
 
 """
     return_prefix(level_index, factor; M = 128, casevar = 5)
@@ -66,6 +67,20 @@ function return_data_file(level_index; sample_index_1 = 4050, sample_index_2 = 3
     w_2std = read(hfile["w_2std"])
     close(hfile)
     return (; field_1, field_2, mean_field, std_field, zlevel, b_mean, b_2std, u_mean, u_2std, v_mean, v_2std, w_mean, w_2std)
+end
+
+function return_scale(data_tuple)
+    mean_scale = zeros(4)
+    std_scale = zeros(4)
+    mean_scale[1] = data_tuple.u_mean
+    mean_scale[2] = data_tuple.v_mean
+    mean_scale[3] = data_tuple.w_mean
+    mean_scale[4] = data_tuple.b_mean
+    std_scale[1] = data_tuple.u_2std
+    std_scale[2] = data_tuple.v_2std
+    std_scale[3] = data_tuple.w_2std
+    std_scale[4] = data_tuple.b_2std
+    return mean_scale, std_scale
 end
 
 end # module DoubleGyreInference
