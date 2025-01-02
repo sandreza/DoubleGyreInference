@@ -102,8 +102,12 @@ save("Figures/mean_v_w_data_samples.png", fig)
 
 # ψ(λ, φ, t) ≡ 2 π a cos(φ) ∫∫ dλ dz' v(λ, φ, z', t)
 # 2πa = 40007863, sverdrup = 1e6 m^3/s
-dλ = 60 / 128
-vfactor = reshape(cosd.(range(15, 75, length = 128)), (128, 1)) * 40007863 / 1e6  * dλ
+rad_to_deg = π / 180
+dλ = 60 / 128 * rad_to_deg
+Lλ = 60 * rad_to_deg
+
+# comment vbar uses the mean, technically we need to  sum, we multiply by the factor here 
+vfactor = reshape(cosd.(range(15, 75, length = 128)), (128, 1)) * 40007863 / 1e6  * Lλ
 Δz = reshape(dz, (1, 15))
 
 Ψᵛ_data = reverse(vfactor .* cumsum(reverse(v̄_data .* Δz, dims = 2), dims = 2), dims = 2)
@@ -163,7 +167,7 @@ lats = range(15, 75, length = 128)
 val = quantile(abs.(Ψᵛ_data[:] - Ψᵛ_samples[:]), 1.0) #maximum(abs.(Ψᵛ_data))
 cr_error = (-val, val)
 cr = extrema(Ψᵛ_data)
-contour_levels = collect(-6:2:30)
+contour_levels = collect(-15:5:60)
 ax = Axis(fig[1, 1]; title = "Model Output", xlabel = latlabel, ylabel = depthlabel)
 contour!(ax, lats, sorted_zlevels, Ψᵛ_data, colormap = :viridis, colorrange = cr, levels = contour_levels,  labels = true)
 ax = Axis(fig[1, 2]; title = "Generative Ensemble Average", xlabel = latlabel, ylabel = depthlabel)
