@@ -54,6 +54,12 @@ for (i, level) in ProgressBar(enumerate(levels_complement))
     zlevels[ii] = data_tuple.zlevel
 end
 
+hfile = h5open("/orcd/data/raffaele/001/sandre/DoubleGyreAnalysisData/moc_5.hdf5", "r")
+dx = read(hfile["dx"])
+dy = read(hfile["dy"])
+dz = read(hfile["dz"])
+close(hfile)
+
 
 permuted_indices = sortperm(zlevels)
 sorted_zlevels = zlevels[permuted_indices]
@@ -94,12 +100,18 @@ heatmap!(ax, lats, sorted_zlevels, v̄_sample_std, colormap = :viridis, colorran
 save("Figures/mean_v_w_data_samples.png", fig)
 
 
-Ψᵛ_data = -cumsum(v̄_data, dims = 2)
-Ψᵛ_samples = -cumsum(v̄_samples, dims = 2)
-Ψᵛ_sample_std = std(cumsum(mean(sorted_vlevels_samples, dims = 1), dims = 4), dims = 4)[1, :, :, 1]
-Ψʷ_data = cumsum(w̄_data, dims = 1)
-Ψʷ_samples = cumsum(w̄_samples, dims = 1)
-Ψʷ_sample_std = std(cumsum(mean(sorted_wlevels_samples, dims = 1), dims = 2), dims = 4)[1, :, :, 1]
+# ψ(λ, φ, t) ≡ 2 π a cos(φ) ∫∫ dλ dz' v(λ, φ, z', t)
+# 2πa = 40007863, sverdrup = 1e6 m^3/s
+dλ = 60 / 128
+vfactor = reshape(cosd.(range(15, 75, length = 128)), (128, 1)) * 40007863 / 1e6  * dλ
+Δz = reshape(dz, (1, 15))
+
+Ψᵛ_data = reverse(vfactor .* cumsum(reverse(v̄_data .* Δz, dims = 2), dims = 2), dims = 2)
+Ψᵛ_samples = reverse(vfactor .* cumsum(reverse(v̄_samples .* Δz, dims = 2), dims = 2), dims = 2)
+Ψᵛ_sample_std = reverse(vfactor .* std(cumsum(reverse(mean(sorted_vlevels_samples, dims = 1) .* reshape(Δz, (1, 1, 15, 1)), dims = 3), dims = 3), dims = 4)[1, :, :, 1], dims = 2)
+Ψʷ_data = cumsum(w̄_data, dims = 1) * dy[1]
+Ψʷ_samples = cumsum(w̄_samples, dims = 1) * dy[1]
+Ψʷ_sample_std = std(cumsum(mean(sorted_wlevels_samples, dims = 1), dims = 2), dims = 4)[1, :, :, 1] * dy[1]
 
 fig = Figure(resolution = (2000, 1000))
 lats = range(15, 75, length = 128)
@@ -122,3 +134,58 @@ heatmap!(ax, lats, sorted_zlevels, Ψᵛ_data - Ψᵛ_samples, colormap = :balan
 ax = Axis(fig[2, 4]; title = "Stream Function V Sample Std", xlabel = latlabel, ylabel = depthlabel)
 heatmap!(ax, lats, sorted_zlevels, Ψᵛ_sample_std, colormap = :viridis, colorrange = (0, maximum(Ψᵛ_sample_std)))
 save("Figures/moc_prototype.png", fig)
+
+fig = Figure(resolution = (2000, 1000))
+lats = range(15, 75, length = 128)
+ax = Axis(fig[1, 1]; title = "Stream Function W Data", xlabel = latlabel, ylabel = depthlabel)
+cr = (-maximum(abs.(Ψʷ_data)), maximum(abs.(Ψʷ_data)))
+contour!(ax, lats, sorted_zlevels, Ψʷ_data, colormap = :balance, colorrange = cr)
+ax = Axis(fig[1, 2]; title = "Stream Function W Samples", xlabel = latlabel, ylabel = depthlabel)
+contour!(ax, lats, sorted_zlevels, Ψʷ_samples, colormap = :balance, colorrange = cr)
+ax = Axis(fig[1, 3]; title = "Stream Function W Error", xlabel = latlabel, ylabel = depthlabel)
+heatmap!(ax, lats, sorted_zlevels, Ψʷ_data - Ψʷ_samples, colormap = :balance, colorrange = cr)
+ax = Axis(fig[1, 4]; title = "Stream Function W Sample Std", xlabel = latlabel, ylabel = depthlabel)
+heatmap!(ax, lats, sorted_zlevels, Ψʷ_sample_std, colormap = :viridis, colorrange = (0, maximum(Ψʷ_sample_std)))
+ax = Axis(fig[2, 1]; title = "Stream Function V Data", xlabel = latlabel, ylabel = depthlabel)
+cr = (-maximum(abs.(Ψᵛ_data)), maximum(abs.(Ψᵛ_data)))
+contour!(ax, lats, sorted_zlevels, Ψᵛ_data, colormap = :balance, colorrange = cr)
+ax = Axis(fig[2, 2]; title = "Stream Function V Samples", xlabel = latlabel, ylabel = depthlabel)
+contour!(ax, lats, sorted_zlevels, Ψᵛ_samples, colormap = :balance, colorrange = cr)
+ax = Axis(fig[2, 3]; title = "Stream Function V Error", xlabel = latlabel, ylabel = depthlabel)
+heatmap!(ax, lats, sorted_zlevels, Ψᵛ_data - Ψᵛ_samples, colormap = :balance, colorrange = cr)
+ax = Axis(fig[2, 4]; title = "Stream Function V Sample Std", xlabel = latlabel, ylabel = depthlabel)
+heatmap!(ax, lats, sorted_zlevels, Ψᵛ_sample_std, colormap = :viridis, colorrange = (0, maximum(Ψᵛ_sample_std)))
+save("Figures/moc_prototype_contour.png", fig)
+
+
+fig = Figure(resolution = (2000, 375))
+lats = range(15, 75, length = 128)
+val = quantile(abs.(Ψᵛ_data[:] - Ψᵛ_samples[:]), 1.0) #maximum(abs.(Ψᵛ_data))
+cr_error = (-val, val)
+cr = extrema(Ψᵛ_data)
+contour_levels = collect(-6:2:30)
+ax = Axis(fig[1, 1]; title = "Model Output", xlabel = latlabel, ylabel = depthlabel)
+contour!(ax, lats, sorted_zlevels, Ψᵛ_data, colormap = :viridis, colorrange = cr, levels = contour_levels,  labels = true)
+ax = Axis(fig[1, 2]; title = "Generative Ensemble Average", xlabel = latlabel, ylabel = depthlabel)
+contour!(ax, lats, sorted_zlevels, Ψᵛ_samples, colormap = :viridis, colorrange = cr, levels = contour_levels, labels = true)
+ax = Axis(fig[1, 3]; title = "Stream Function Ensemble Error", xlabel = latlabel, ylabel = depthlabel)
+hm = heatmap!(ax, lats, sorted_zlevels, Ψᵛ_data - Ψᵛ_samples, colormap = :balance, colorrange = cr_error)
+Colorbar(fig[1, 4],  hm, label = "Sverdrup [10^6 m^3/s]")
+ax = Axis(fig[1, 5]; title = "Generative Ensemble Std", xlabel = latlabel, ylabel = depthlabel)
+hm2 = heatmap!(ax, lats, sorted_zlevels, Ψᵛ_sample_std, colormap = :viridis, colorrange = (0, cr_error[2]))
+Colorbar(fig[1, 6], hm2, label = "Sverdrup [10^6 m^3/s]")
+save("Figures/v_moc_prototype_contour.png", fig)
+
+fig = Figure(resolution = (2000, 500))
+lats = range(15, 75, length = 128)
+cr_error = (-maximum(abs.(Ψᵛ_data)), maximum(abs.(Ψᵛ_data)))
+cr = extrema(Ψᵛ_data)
+ax = Axis(fig[1, 1]; title = "Model Output", xlabel = latlabel, ylabel = depthlabel)
+heatmap!(ax, lats, sorted_zlevels, Ψᵛ_data, colormap = :viridis, colorrange = cr)
+ax = Axis(fig[1, 2]; title = "Generative Ensemble Average", xlabel = latlabel, ylabel = depthlabel)
+heatmap!(ax, lats, sorted_zlevels, Ψᵛ_samples, colormap = :viridis, colorrange = cr)
+ax = Axis(fig[1, 3]; title = "Stream Function Error", xlabel = latlabel, ylabel = depthlabel)
+heatmap!(ax, lats, sorted_zlevels, Ψᵛ_data - Ψᵛ_samples, colormap = :balance, colorrange = cr_error)
+ax = Axis(fig[1, 4]; title = "Generative Ensemble Std", xlabel = latlabel, ylabel = depthlabel)
+heatmap!(ax, lats, sorted_zlevels, Ψᵛ_sample_std, colormap = :viridis, colorrange = (0, maximum(Ψᵛ_sample_std)))
+save("Figures/v_moc_prototype_heatmap.png", fig)
