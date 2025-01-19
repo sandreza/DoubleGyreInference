@@ -112,10 +112,27 @@ vfactor = reshape(cosd.(range(15, 75, length = 128)), (128, 1)) * 40007863 / 1e6
 
 Ψᵛ_data = reverse(vfactor .* cumsum(reverse(v̄_data .* Δz, dims = 2), dims = 2), dims = 2)
 Ψᵛ_samples = reverse(vfactor .* cumsum(reverse(v̄_samples .* Δz, dims = 2), dims = 2), dims = 2)
+Ψᵛ_sample_members = reverse(vfactor .* cumsum(reverse(mean(sorted_vlevels_samples, dims = 1) .* reshape(Δz, (1, 1, 15, 1)), dims = 3), dims = 3)[1, :, :, :], dims = 2)
 Ψᵛ_sample_std = reverse(vfactor .* std(cumsum(reverse(mean(sorted_vlevels_samples, dims = 1) .* reshape(Δz, (1, 1, 15, 1)), dims = 3), dims = 3), dims = 4)[1, :, :, 1], dims = 2)
 Ψʷ_data = cumsum(w̄_data, dims = 1) * dy[1]
 Ψʷ_samples = cumsum(w̄_samples, dims = 1) * dy[1]
 Ψʷ_sample_std = std(cumsum(mean(sorted_wlevels_samples, dims = 1), dims = 2), dims = 4)[1, :, :, 1] * dy[1]
+
+error_per_level_and_member = zeros(size(Ψᵛ_sample_members)[2:3]...)
+for i in 1:size(error_per_level_and_member, 1)
+    for j in 1:size(error_per_level_and_member, 2)
+        error_per_level_and_member[i, j] = norm(Ψᵛ_data[:, i] - Ψᵛ_sample_members[:, i, j], Inf)
+    end
+end
+
+ensemble_min = [argmin(error_per_level_and_member[i, :]) for i in 1:15]
+Ψᵛ_sample_members_best = similar(Ψᵛ_data)
+for i in 1:15
+    Ψᵛ_sample_members_best[:, i] .= Ψᵛ_sample_members[:, i, ensemble_min[i]]
+end
+errors_Ψᵛ_2 = [norm(Ψᵛ_data - Ψᵛ_sample_members[:, :, i], Inf) for i in 1:size(Ψᵛ_sample_members, 3)]
+errors_Ψᵛ_1 = norm(Ψᵛ_data - Ψᵛ_samples, Inf)
+errors_Ψᵛ_best = norm(Ψᵛ_data - Ψᵛ_sample_members_best, Inf)
 
 fig = Figure(resolution = (2000, 1000))
 lats = range(15, 75, length = 128)
@@ -193,3 +210,8 @@ heatmap!(ax, lats, sorted_zlevels, Ψᵛ_data - Ψᵛ_samples, colormap = :balan
 ax = Axis(fig[1, 4]; title = "Generative Ensemble Std", xlabel = latlabel, ylabel = depthlabel)
 heatmap!(ax, lats, sorted_zlevels, Ψᵛ_sample_std, colormap = :viridis, colorrange = (0, maximum(Ψᵛ_sample_std)))
 save("Figures/v_moc_prototype_heatmap.png", fig)
+
+
+#=
+hfile = h5open("/orcd/data/raffaele/001/sandre/DoubleGyreAnalysisData/moc_5.hdf5", "r")
+=#
