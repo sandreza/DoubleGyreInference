@@ -6,6 +6,12 @@ export return_samples_file
 export return_data_file
 export return_scale
 
+const free_surface_color = :diverging_protanopic_deuteranopic_bwy_60_95_c32_n256
+const temperature_color = :thermometer
+const velocity_color = :balance
+
+export free_surface_color, temperature_color, velocity_color
+
 """
     return_prefix(level_index, factor; M = 128, casevar = 5)
 
