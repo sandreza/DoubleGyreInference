@@ -20,11 +20,26 @@ field = read(hfile["field"])
 close(hfile)
 
 
-fig = Figure(resolution = (2000, 1000))
+lats = range(15, 75, length = 128)
+lons = range(0, 60, length = 128)
+
+fig = Figure(resolution = (1000, 800))
+state_names = ["U", "V", "W", "T", "η"]
+colormaps = [velocity_color, velocity_color, velocity_color, temperature_color, free_surface_color]
 for state_index in 1:5
     for (i, month) in enumerate([1000, 1001, 2000, 3000, 3645, 4000])
-        ax = Axis(fig[state_index, i]; title = "State = " * string(state_index) * " at Time = " * string(month), xlabel = "Longitude", ylabel = "Latitude")
-        heatmap!(ax, field[:, :, state_index, month], colormap = :balance, colorrange = (-1, 1))
+        ax = Axis(fig[state_index, i]; title = state_names[state_index] * " at Month " * string(month), xlabel = "Longitude", ylabel = "Latitude")
+        if (state_index < 5) & (i > 1)
+            hidedecorations!(ax)
+        elseif (state_index < 5)
+            hidexdecorations!(ax)
+        elseif (i > 1)
+            hideydecorations!(ax)
+        else
+            nothing
+        end
+        
+        heatmap!(ax, lons, lats, field[:, :, state_index, month], colormap = colormaps[state_index], colorrange = (-1, 1))
     end
 end
 save("Figures/show_state_in_time_levelindex_$(level_index).png", fig)
