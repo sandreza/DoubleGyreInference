@@ -1,7 +1,5 @@
 using DoubleGyreInference, Statistics, ProgressBars, LinearAlgebra, CairoMakie, Printf, HDF5
 
-
-
 M = 256 
 casevar = 5
 α = 2e-4

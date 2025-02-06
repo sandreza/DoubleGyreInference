@@ -1,5 +1,5 @@
 using HDF5, DoubleGyreInference, Statistics, ProgressBars, LinearAlgebra, CairoMakie
-
+using LaTeXStrings
 r_pref = DoubleGyreInference.return_prefix
 sampled_data_directory = "/orcd/data/raffaele/001/sandre/DoubleGyreAnalysisData/DoubleGyre/"
 oceananigans_data_directory = "/orcd/data/raffaele/001/sandre/DoubleGyreTrainingData/"
@@ -71,7 +71,6 @@ for level_index in ProgressBar([1, 2, 3, 5, 7])
         end
     end
 
-
     tmp = return_data_file(level_index)
     α = 2e-4
     g = 9.8
@@ -110,7 +109,7 @@ string_label[1] = "1355 [m]"
 for k in 1:3
     fig = Figure(resolution = (1500, 300)) 
     for i in 1:4
-        ax = Axis(fig[1, i]; title = "Prediction Error " * fieldnames[i], ylabel = units[i], xlabel)
+        ax = Axis(fig[1, i]; title = "Error " * fieldnames[i], ylabel = units[i], xlabel)
         for ii in eachindex(string_label)
             error_list = level_errors[ii]
             scale = scales[ii]
@@ -126,6 +125,26 @@ for k in 1:3
 
     save("Figures/prediction_error_at_various_levels_norm_" *  normlabel[k] * ".png", fig)
 end
+
+
+k = 2
+fig = Figure(resolution = (2250, 450), fontsize = 30) 
+for i in 1:4
+    ax = Axis(fig[1, i]; title = "Error " * fieldnames[i], ylabel = units[i], xlabel)
+    for ii in eachindex(string_label)
+        error_list = level_errors[ii]
+        scale = scales[ii]
+        scatter!(ax, cglist, error_list[:, i, k] * scale[i], color = colors[ii])
+        lines!(ax, cglist, error_list[:, i, k] * scale[i], label = string_label[ii], color = colors[ii])
+        scatter!(ax, [0, 0]; markersize = 0)
+        ax.xticks = cglist
+    end
+    if i == 2
+        axislegend(ax, position = :lt, labelsize = 24)
+    end
+end
+
+save("Figures/prediction_error_at_various_levels_norm_" *  normlabel[k] * ".png", fig)
 
 
 fig = Figure(resolution = (1500, 3 * 300)) 

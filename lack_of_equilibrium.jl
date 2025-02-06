@@ -25,18 +25,29 @@ zlevels = z_centers.(1:15)
 
 levels = [3, collect(9:14)...] # with respect to the original indices 
 
-fig = Figure(resolution = (2000, 1000))
+fig = Figure(resolution = (1000, 750))
 state_index = 1
 state_names = ["U", "V", "W", "T"]
 units = ["m/s", "m/s", "m/s", "K"]
-for i in eachindex(levels) 
+end_index = (size(averages, 1) - N2 ) ÷ 2 + N2
+chosen_levels = levels[1:2:end]
+hiding_options = (; label = true, ticklabels = true, ticks = false, grid = false, minorgrid = false, minorticks = false)
+for (i, level) in enumerate(chosen_levels)
     for state_index in eachindex(1:4)
-        level = levels[i]
         depth_string = @sprintf("%0.f", abs(zlevels[level]))
-        ax = Axis(fig[state_index, length(levels) + 1 - i]; title = state_names[state_index] * " at Depth = " * depth_string * " [m]", xlabel = "Time (months)", ylabel = state_names[state_index] * " [" * units[state_index] * "]")
+        ax = Axis(fig[state_index, length(chosen_levels) + 1 - i]; title = state_names[state_index] * " at Depth = " * depth_string * " [m]", xlabel = "Time (months)", ylabel = state_names[state_index] * " [" * units[state_index] * "]")
+        if (state_index < 4) & (i < length(chosen_levels))
+            hidedecorations!(ax; hiding_options...)
+        elseif (state_index < 4)
+            hidexdecorations!(ax; hiding_options...)
+        elseif (i < length(chosen_levels))
+            hideydecorations!(ax; hiding_options...)
+        else
+            nothing
+        end
         lines!(ax, 1:N1-1, averages[1:N1-1, level, state_index]; color = :blue, label = "Spin Up")
         lines!(ax, N1:N2, averages[N1:N2, level, state_index]; color = :red, label = "Training Data")
-        lines!(ax, N2+1:size(averages, 1), averages[N2+1:end, level, state_index]; color = :orange, label = "Test Data")
+        lines!(ax, N2+1:end_index, averages[N2+1:end_index, level, state_index]; color = :orange, label = "Test Data")
         if (state_index == 1) | (state_index == 2)
             ylims!(ax, 0, 0.11)
         elseif state_index == 3
