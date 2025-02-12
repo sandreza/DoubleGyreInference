@@ -4,7 +4,7 @@ using DoubleGyreInference, Statistics, ProgressBars, LinearAlgebra, CairoMakie, 
 g = 9.81
 
 level_indices = [7, 5, 3, 1] # [7, 5, 3, 1]
-factors = [2^k for k in 0:7]
+factors = [2^k for k in 0:2:7]
 for ZLast in [32, 128]
 for i in eachindex(level_indices)
     level_index = level_indices[i]
@@ -13,7 +13,7 @@ for i in eachindex(level_indices)
     field = data_tuple.field_2
     field[:, :, 1:4] .= field[:, :, 1:4] .* reshape(σ, (1, 1, 4)) .+ reshape(μ, (1, 1, 4))
     field[:, :, 4] .= field[:, :, 4] ./ (α * g)
-    fig = Figure(resolution = (2500, 1000))
+    fig = Figure(resolution = (1250, 500))
     for (j, factor) in enumerate(factors)
         sample_tuple = return_samples_file(level_index, factor)
 
@@ -47,7 +47,7 @@ for i in eachindex(level_indices)
         band!(ax, Point.(δlower, latitude), Point.(δupper, latitude); color = (:red, op))
 
         if j == 1
-            axislegend(ax, position = :rc)
+            axislegend(ax, position = :lt)
         end
 
         zonal_average = mean(field[1:ZLast, :, 2] .* field[1:ZLast, :, 4], dims = 1)[:]
