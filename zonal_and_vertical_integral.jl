@@ -69,24 +69,47 @@ sorted_vlevels_samples = vlevels_samples[:, :, permuted_indices, :]
 sorted_Tlevels_samples = Tlevels_samples[:, :, permuted_indices, :]
 
 
-# .* sorted_Tlevel_data ,
-# .* sorted_Tlevels_samples
+rad_to_deg = π / 180
+dλ = 60 / 128 * rad_to_deg
+Lλ = 60 * rad_to_deg
+# comment vbar uses the mean, technically we need to  sum, we multiply by the factor here 
+ρ = 1000 
+c_p = 4000
+vfactor = reshape(cosd.(range(15, 75, length = 128)), (1, 128,1, 1)) * 40007863 * ρ * c_p / 10^(15) / (2π)
+
+
 Δz = reshape(dz, (1, 1, 15))
-vT_data = sum(sorted_vlevels_data .* Δz .* sorted_Tlevel_data, dims = (1, 3))
+vT_data = sum(sorted_vlevels_data .* Δz .* sorted_Tlevel_data, dims = (1, 3))[:] * dλ .* vfactor[:]
 Δz_2 = reshape(dz, (1, 1, 15, 1))
-vT_samples = sum(sorted_vlevels_samples .* Δz_2 .* sorted_Tlevels_samples, dims = (1, 3))
-ensemble_mean_vT_samples = mean(vT_samples, dims = 4)[1, :, 1, 1]
+vT_samples = sum(sorted_vlevels_samples .* Δz_2 .* sorted_Tlevels_samples, dims = (1, 3)) * dλ .* vfactor
+ensemble_mean_vT_samples = mean(vT_samples, dims = 4)[1, :, 1, 1] 
 
-
-qu = 0.01
+Nlat = size(vT_samples, 2)
+op = 0.3
+qu = 0.1
 fig = Figure()
-ax = Axis(fig[1, 1]; title = "Meridional Heat Flux", ylabel = "Latitude [ᵒ]", xlabel = "Meridional Heat Flux [K m/s]")
+ax = Axis(fig[1, 1]; title = "Zonal and Vertically Integrated Meridional Heat Flux",  ylabel = "Latitude [ᵒ]", xlabel = "Heat Flux [PW]")
 latitude = range(15, 75, length = 128)
 lines!(ax, vT_data[:], latitude; color = (:blue, 0.3), label = "Ground Truth")
 scatter!(ax, vT_data[:], latitude; color = (:blue, 0.3), markersize = 1)
 scatter!(ax, ensemble_mean_vT_samples, latitude; color = (:red, 0.3), markersize = 1)
 lines!(ax, ensemble_mean_vT_samples, latitude; color = (:red, 0.3), label = "Generative AI")
-δlower = [quantile(zonal_average_samples[i, :], 1-qu) for i in 1:Nlat]
-δupper = [quantile(zonal_average_samples[i, :], qu) for i in 1:Nlat]
+δlower = [quantile(vT_samples[1, i, 1, :], 1-qu) for i in 1:Nlat]
+δupper = [quantile(vT_samples[1, i, 1, :], qu) for i in 1:Nlat]
 band!(ax, Point.(δlower, latitude), Point.(δupper, latitude); color = (:red, op))
-save("integrated_meridional_heat_flux.png", fig)
+save("integrated_meridional_heat_flux_ten.png", fig)
+
+Nlat = size(vT_samples, 2)
+op = 0.3
+qu = 0.01
+fig = Figure()
+ax = Axis(fig[1, 1]; title = "Zonal and Vertically Integrated Meridional Heat Flux",  ylabel = "Latitude [ᵒ]", xlabel = "Heat Flux [PW]")
+latitude = range(15, 75, length = 128)
+lines!(ax, vT_data[:], latitude; color = (:blue, 0.3), label = "Ground Truth")
+scatter!(ax, vT_data[:], latitude; color = (:blue, 0.3), markersize = 1)
+scatter!(ax, ensemble_mean_vT_samples, latitude; color = (:red, 0.3), markersize = 1)
+lines!(ax, ensemble_mean_vT_samples, latitude; color = (:red, 0.3), label = "Generative AI")
+δlower = [quantile(vT_samples[1, i, 1, :], 1-qu) for i in 1:Nlat]
+δupper = [quantile(vT_samples[1, i, 1, :], qu) for i in 1:Nlat]
+band!(ax, Point.(δlower, latitude), Point.(δupper, latitude); color = (:red, op))
+save("integrated_meridional_heat_flux_one.png", fig)
