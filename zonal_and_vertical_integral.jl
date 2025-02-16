@@ -90,14 +90,15 @@ qu = 0.1
 fig = Figure()
 ax = Axis(fig[1, 1]; title = "Zonal and Vertically Integrated Meridional Heat Flux",  ylabel = "Latitude [ᵒ]", xlabel = "Heat Flux [PW]")
 latitude = range(15, 75, length = 128)
-lines!(ax, vT_data[:], latitude; color = (:blue, 0.3), label = "Ground Truth")
+lines!(ax, vT_data[:], latitude; color = (:blue, 0.3), label = "Oceananigans")
 scatter!(ax, vT_data[:], latitude; color = (:blue, 0.3), markersize = 1)
 scatter!(ax, ensemble_mean_vT_samples, latitude; color = (:red, 0.3), markersize = 1)
-lines!(ax, ensemble_mean_vT_samples, latitude; color = (:red, 0.3), label = "Generative AI")
+lines!(ax, ensemble_mean_vT_samples, latitude; color = (:red, 0.3), label = "AI")
 δlower = [quantile(vT_samples[1, i, 1, :], 1-qu) for i in 1:Nlat]
 δupper = [quantile(vT_samples[1, i, 1, :], qu) for i in 1:Nlat]
 band!(ax, Point.(δlower, latitude), Point.(δupper, latitude); color = (:red, op))
-save("integrated_meridional_heat_flux_ten.png", fig)
+axislegend(ax, position = :rt)
+save("Figures/integrated_meridional_heat_flux_ten.png", fig)
 
 Nlat = size(vT_samples, 2)
 op = 0.3
@@ -105,11 +106,12 @@ qu = 0.01
 fig = Figure()
 ax = Axis(fig[1, 1]; title = "Zonal and Vertically Integrated Meridional Heat Flux",  ylabel = "Latitude [ᵒ]", xlabel = "Heat Flux [PW]")
 latitude = range(15, 75, length = 128)
-lines!(ax, vT_data[:], latitude; color = (:blue, 0.3), label = "Ground Truth")
+lines!(ax, vT_data[:], latitude; color = (:blue, 0.3), label = "Oceananigans")
 scatter!(ax, vT_data[:], latitude; color = (:blue, 0.3), markersize = 1)
 scatter!(ax, ensemble_mean_vT_samples, latitude; color = (:red, 0.3), markersize = 1)
-lines!(ax, ensemble_mean_vT_samples, latitude; color = (:red, 0.3), label = "Generative AI")
+lines!(ax, ensemble_mean_vT_samples, latitude; color = (:red, 0.3), label = "AI")
 δlower = [quantile(vT_samples[1, i, 1, :], 1-qu) for i in 1:Nlat]
 δupper = [quantile(vT_samples[1, i, 1, :], qu) for i in 1:Nlat]
 band!(ax, Point.(δlower, latitude), Point.(δupper, latitude); color = (:red, op))
-save("integrated_meridional_heat_flux_one.png", fig)
+axislegend(ax, position = :rt)
+save("Figures/integrated_meridional_heat_flux_one.png", fig)
