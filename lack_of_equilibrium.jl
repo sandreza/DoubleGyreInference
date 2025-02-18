@@ -61,3 +61,49 @@ for (i, level) in enumerate(chosen_levels)
     end
 end
 save("Figures/convergence_with_depth.png", fig)
+
+
+
+fig = Figure(resolution = (1000, 750))
+state_index = 1
+state_names = ["U", "V", "W", "T"]
+units = ["m/s", "m/s", "m/s", "K"]
+end_index = (size(averages, 1) - N2 ) ÷ 2 + N2
+chosen_levels = levels[1:2:end]
+
+hiding_options = (; label = true, ticklabels = true, ticks = false, grid = false, minorgrid = false, minorticks = false)
+for (i, level) in enumerate(chosen_levels)
+    for state_index in eachindex(1:4)
+        depth_string = @sprintf("%0.f", abs(zlevels[level]))
+        if state_index == 1
+            title = "Depth = " * depth_string * " [m]"
+        else
+            title = ""
+        end
+        ax = Axis(fig[state_index, length(chosen_levels) + 1 - i]; title = title, xlabel = "Time (Years)", ylabel = "log10 " * state_names[state_index] * " [" * units[state_index] * "]")
+        if (state_index < 4) & (i < length(chosen_levels))
+            hidedecorations!(ax; hiding_options...)
+        elseif (state_index < 4)
+            hidexdecorations!(ax; hiding_options...)
+        elseif (i < length(chosen_levels))
+            hideydecorations!(ax; hiding_options...)
+        else
+            nothing
+        end
+        lines!(ax, collect(1:N1-1)/12, log10.(averages[1:N1-1, level, state_index]); color = :blue, label = "Spin Up")
+        lines!(ax, collect(N1:N2)/12, log10.(averages[N1:N2, level, state_index]); color = :red, label = "Training Data")
+        lines!(ax, collect(N2+1:end_index)/12, log10.(averages[N2+1:end_index, level, state_index]); color = :orange, label = "Test Data")
+        if (state_index == 1) | (state_index == 2)
+            ylims!(ax, -2, -0.9)
+        elseif state_index == 3
+            ylims!(ax, -5.0, -3)
+        else
+            ylims!(ax, 0.1, 1.5)
+            # ylims!(ax, 0, 30)
+        end
+        if (i == 1) & (state_index == 1)
+            axislegend(ax, position = :rt)
+        end
+    end
+end
+save("Figures/convergence_with_depth_log.png", fig)
