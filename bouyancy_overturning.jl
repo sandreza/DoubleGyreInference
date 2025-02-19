@@ -114,15 +114,24 @@ end
 
 using Statistics: mean
 
-b_surf = zeros(128)
+b_max = zeros(128)
 for i in 1:Ns
-    b_surf .= max.(b_surf, maximum(blevels_data[:, :, 15, i], dims=1)[1, :])
+    b_max .= max.(b_max, maximum(blevels_data[:, :, 15, i], dims=1)[1, :])
 end
 
+b_mean = zeros(128)
+for i in 1:Ns
+    b_mean .+= mean(blevels_data[:, :, 15, i], dims=1)[1, :] ./ Ns
+end
 
 fig = Figure()
-ax  = Axis(fig[1, 1], title=L"\text{Overturning Circulation}", xlabel=L"\text{Buoyancy}", ylabel=L"\text{Latitude}")
+ax  = Axis(fig[1, 1], title=L"\text{Overturning Circulation}", 
+           xlabel=L"\text{Buoyancy ms}^{-2}", 
+           ylabel=L"\text{Latitude }^\circ",
+           xticks=([15, 35, 55, 75], [L"15", L"35", L"55", L"75"]),
+           yticks=([0, 0.015, 0.030, 0.055], [L"0", L"0.015", L"0.030", L"0.055"]))
 heatmap!(ax, range(15, 75, length=128), blevels, MOC, colorrange=(-3000, 5000), colormap=:bwr)
-lines!(ax, range(15, 75, length=128), b_surf, linewidth = 2, color=:black, linestyle=:dash)
+lines!(ax, range(15, 75, length=128), b_max, linewidth = 2, color=:black, linestyle=:dash)
+lines!(ax, range(15, 75, length=128), b_mean, linewidth = 2, color=:black, linestyle=:dash)
 
 
