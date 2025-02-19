@@ -5,8 +5,8 @@ using DoubleGyreInference, Statistics, ProgressBars, LinearAlgebra, CairoMakie, 
 factor = 1
 files = filter(x -> endswith(x, "1_generative_samples.hdf5"), readdir("/orcd/data/raffaele/001/sandre/DoubleGyreAnalysisData/DoubleGyre/"))
 
-vlevels_data = zeros(128, 128, length(files))
-blevels_data = zeros(128, 128, length(files))
+vlevels_data = zeros(128, 128, length(files), 2401)
+blevels_data = zeros(128, 128, length(files), 2401)
 vlevels_samples = zeros(128, 128, length(files), 100)
 blevels_samples = zeros(128, 128, length(files), 100)
 zlevels = zeros(length(files))
@@ -20,21 +20,46 @@ close(hfile)
 levels = 1:7
 for (i, level) in ProgressBar(enumerate(levels))
     sample_tuple = return_samples_file(level, factor; complement = false)
-    data_tuple = return_data_file(level; complement = false)
+    data_tuple = return_data_file(level; complement = false, sample_index_1 = 1200:3600)
 
     μ, σ = return_scale(data_tuple)
-    field = data_tuple.field_2
-    field[:, :, 1:4] .= field[:, :, 1:4] .* reshape(σ, (1, 1, 4)) .+ reshape(μ, (1, 1, 4))
+    field = data_tuple.field_1
+    field[:, :, 1:4, :] .= field[:, :, 1:4, :] .* reshape(σ, (1, 1, 4)) .+ reshape(μ, (1, 1, 4))
     average_samples = sample_tuple.samples_2 .* reshape(σ, (1, 1, 4, 1)) .+ reshape(μ, (1, 1, 4, 1)) 
     
     vlevels_samples[:, :, i, :] .= average_samples[:, :, 2, :]
     blevels_samples[:, :, i, :] .= average_samples[:, :, 4, :]
 
-    vlevels_data[:, :, i] .= field[:, :, 2]
-    blevels_data[:, :, i] .= field[:, :, 4]
+    vlevels_data[:, :, i, :] .= field[:, :, 2, :]
+    blevels_data[:, :, i, :] .= field[:, :, 4, :]
 
     zlevels[i] = data_tuple.zlevel
 end
+
+levels_complement = 1:8
+for (ii, level) in ProgressBar(enumerate(levels_complement))
+    i = ii + length(levels)
+    sample_tuple = return_samples_file(level, factor; complement = true)
+    data_tuple = return_data_file(level; complement = true, sample_index_1 = 1200:3600)
+
+    μ, σ = return_scale(data_tuple)
+    field = data_tuple.field_1
+    field[:, :, 1:4, :] .= field[:, :, 1:4, :] .* reshape(σ, (1, 1, 4)) .+ reshape(μ, (1, 1, 4))
+    average_samples = sample_tuple.samples_2 .* reshape(σ, (1, 1, 4, 1)) .+ reshape(μ, (1, 1, 4, 1))
+
+    vlevels_samples[:, :, i, :] .= average_samples[:, :, 2, :]
+    blevels_samples[:, :, i, :] .= average_samples[:, :, 4, :]
+
+    vlevels_data[:, :, i, :] .= field[:, :, 2, :]
+    blevels_data[:, :, i, :] .= field[:, :, 4, :]
+
+    zlevels[i] = data_tuple.zlevel
+end
+
+permuted_indices = sortperm(zlevels)
+zlevels = zlevels[permuted_indices]
+vlevels_data = vlevels_data[:, :, permuted_indices, :]
+blevels_data = blevels_data[:, :, permuted_indices, :]
 
 @inline function calculate_residual_MOC(v, b, dx, dy, dz; blevels = collect(0.0:0.001:0.06))
 
@@ -77,6 +102,27 @@ end
     end
 end
 
+Ns = length(blevels_data[1, 1, 1, :])
+blevels = collect(0:0.002:0.058)
+
 # Calculate the MOC!
-MOC = calculate_residual_MOC(vlevels_data, blevels_data, dx, dy, dz; blevels=collect(0:0.002:0.052))
+MOC = calculate_residual_MOC(vlevels_data[:, :, :, 1], blevels_data[:, :, :, 1], dx, dy, dz; blevels) ./ Ns
+
+for i in 2:Ns
+    MOC .+= calculate_residual_MOC(vlevels_data[:, :, :, i], blevels_data[:, :, :, i], dx, dy, dz; blevels) ./ Ns
+end
+
+using Statistics: mean
+
+b_surf = zeros(128)
+for i in 1:Ns
+    b_surf .= max.(b_surf, maximum(blevels_data[:, :, 15, i], dims=1)[1, :])
+end
+
+
+fig = Figure()
+ax  = Axis(fig[1, 1], title=L"\text{Overturning Circulation}", xlabel=L"\text{Buoyancy}", ylabel=L"\text{Latitude}")
+heatmap!(ax, range(15, 75, length=128), blevels, MOC, colorrange=(-3000, 5000), colormap=:bwr)
+lines!(ax, range(15, 75, length=128), b_surf, linewidth = 2, color=:black, linestyle=:dash)
+
 
