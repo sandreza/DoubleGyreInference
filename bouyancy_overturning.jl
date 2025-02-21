@@ -61,17 +61,32 @@ zlevels = zlevels[permuted_indices]
 vlevels_data = vlevels_data[:, :, permuted_indices, :]
 blevels_data = blevels_data[:, :, permuted_indices, :]
 
-@inline function calculate_residual_MOC(v, b, dx, dy, dz; blevels = collect(0.0:0.001:0.06))
+bF = collect(0.0:0.001:0.06)
+bC = (bF[2:end] .+ bF[1:end-1]) ./ 2
 
-    Nb         = length(blevels)
+zfield = zeros(size(blevels_data))[:, :, :, 1]
+for i in 1:128, j in 1:128
+    zfield[i, j, :] .= zlevels
+end
+
+zC = zlevels
+zF = zeros(length(zC)+1)
+for i in 2:length(zC)+1
+    zF[i] = zC[i-1] + dz[i-1] / 2
+end
+zF[1] = zC[1] - dz[1] / 2
+
+@inline function calculate_residual_MOC(v, b, dx, dy, dz; bF = zF, bC = zC)
+
+    Nb         = length(bC)
     Nx, Ny, Nz = size(b)
     
     ψ       = zeros(Nx, Ny, Nb)
-    ψint    = zeros(Nx, Ny, Nb)
-    ψavgint = zeros(Ny, Nb)
+    ψint    = zeros(Nx, Ny, Nb+1)
+    ψavgint = zeros(Ny, Nb+1)
 
 
-    _cumulate_v_velocities!(CPU(), (16, 16), (Nx, Ny))(ψint, ψ, b, v, blevels, dx, dy, dz, Nz) 
+    _cumulate_v_velocities!(CPU(), (16, 16), (Nx, Ny))(ψint, ψ, b, v, bC, bF, dx, dy, dz, Nz) 
 
     for i in 1:Nx
        ψavgint .+= ψint[i, :, :]
@@ -80,58 +95,58 @@ blevels_data = blevels_data[:, :, permuted_indices, :]
     return ψavgint
 end
 
-@kernel function _cumulate_v_velocities!(ψint, ψ, b, v, blevels, dx, dy, dz, Nz)
+@kernel function _cumulate_v_velocities!(ψint, ψ, b, v, bC, bF, dx, dy, dz, Nz)
     i, j = @index(Global, NTuple)
 
-    Nb = length(blevels)
-    Δb = blevels[2] - blevels[1]
+    Nb = length(bC)
+    Δb = bC[2] - bC[1]
 
     for k in 1:Nz
-        if b[i, j, k] < blevels[end]
-            blev = searchsortedfirst(blevels, b[i, j, k])
+        if b[i, j, k] < bF[end]
+            blev = searchsortedfirst(bF, b[i, j, k])
             ψ[i, j, blev] += v[i, j, k] * dx[i] * dz[k]
         end
     end
-
-    ψint[i, j, 1] = Δb * ψ[i, j, 1]
+    
+    ψint[i, j, 1] = 0 
     bmax = maximum(b[i, j, :])
-    for blev in 2:Nb
-        if bmax > blevels[blev]
-            ψint[i, j, blev] = ψint[i, j, blev-1] + Δb * ψ[i, j, blev]
+    for blev in 2:Nb+1
+        if bmax > bF[blev]
+            ψint[i, j, blev] = ψint[i, j, blev-1] + Δb * ψ[i, j, blev-1]
         end
     end
 end
 
-Ns = length(blevels_data[1, 1, 1, :])
-blevels = collect(0:0.002:0.058)
+# Ns = length(blevels_data[1, 1, 1, :])
+# blevels = collect(0:0.001:0.060)
 
 # Calculate the MOC!
-MOC = calculate_residual_MOC(vlevels_data[:, :, :, 1], blevels_data[:, :, :, 1], dx, dy, dz; blevels) ./ Ns
+MOC = calculate_residual_MOC(vlevels_data[:, :, :, 1], zfield, dx, dy, dz)
 
-for i in 2:Ns
-    MOC .+= calculate_residual_MOC(vlevels_data[:, :, :, i], blevels_data[:, :, :, i], dx, dy, dz; blevels) ./ Ns
-end
-
-using Statistics: mean
-
-b_max = zeros(128)
-for i in 1:Ns
-    b_max .= max.(b_max, maximum(blevels_data[:, :, 15, i], dims=1)[1, :])
-end
-
-b_mean = zeros(128)
-for i in 1:Ns
-    b_mean .+= mean(blevels_data[:, :, 15, i], dims=1)[1, :] ./ Ns
-end
-
-fig = Figure()
-ax  = Axis(fig[1, 1], title=L"\text{Overturning Circulation}", 
-           xlabel=L"\text{Buoyancy ms}^{-2}", 
-           ylabel=L"\text{Latitude }^\circ",
-           xticks=([15, 35, 55, 75], [L"15", L"35", L"55", L"75"]),
-           yticks=([0, 0.015, 0.030, 0.055], [L"0", L"0.015", L"0.030", L"0.055"]))
-heatmap!(ax, range(15, 75, length=128), blevels, MOC, colorrange=(-3000, 5000), colormap=:bwr)
-lines!(ax, range(15, 75, length=128), b_max, linewidth = 2, color=:black, linestyle=:dash)
-lines!(ax, range(15, 75, length=128), b_mean, linewidth = 2, color=:black, linestyle=:dash)
+# for i in 2:Ns
+#     MOC .+= calculate_residual_MOC(vlevels_data[:, :, :, i], blevels_data[:, :, :, i], dx, dy, dz; blevels) ./ Ns
+# end
+# 
+# using Statistics: mean
+# 
+# b_max = zeros(128)
+# for i in 1:Ns
+#     b_max .= max.(b_max, maximum(blevels_data[:, :, 15, i], dims=1)[1, :])
+# end
+# 
+# b_mean = zeros(128)
+# for i in 1:Ns
+#     b_mean .+= mean(blevels_data[:, :, 15, i], dims=1)[1, :] ./ Ns
+# end
+# 
+# fig = Figure()
+# ax  = Axis(fig[1, 1], title=L"\text{Overturning Circulation}", 
+#            xlabel=L"\text{Buoyancy ms}^{-2}", 
+#            ylabel=L"\text{Latitude }^\circ",
+#            xticks=([15, 35, 55, 75], [L"15", L"35", L"55", L"75"]),
+#            yticks=([0, 0.015, 0.030, 0.055], [L"0", L"0.015", L"0.030", L"0.055"]))
+# heatmap!(ax, range(15, 75, length=128), blevels, MOC, colorrange=(-3000, 5000), colormap=:bwr)
+# lines!(ax, range(15, 75, length=128), b_max, linewidth = 2, color=:black, linestyle=:dash)
+# lines!(ax, range(15, 75, length=128), b_mean, linewidth = 2, color=:black, linestyle=:dash)
 
 
