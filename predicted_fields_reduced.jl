@@ -265,3 +265,5 @@ for (i, t) in enumerate([1, 2, 3, 4])
     hidedecorations!(ax)
     heatmap!(ax, lons, lats, data_tuple.std_field[:, :, t] .* σ[t], colormap = :viridis, colorrange = ((0, 1/4) .* σ[t]))
     Colorbar(fig[i, 11], hm, label = units[t], ticks=stdticks[t], labelsize=20, ticklabelsize = 20)
+end
+
