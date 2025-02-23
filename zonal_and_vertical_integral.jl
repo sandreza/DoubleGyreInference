@@ -1,5 +1,6 @@
 using DoubleGyreInference, Statistics, ProgressBars, LinearAlgebra, CairoMakie, Printf, HDF5
-
+α = 2e-4
+g = 9.81
 factor = 1
 files = filter(x -> endswith(x, "1_generative_samples.hdf5"), readdir("/orcd/data/raffaele/001/sandre/DoubleGyreAnalysisData/DoubleGyre/"))
 
@@ -103,8 +104,9 @@ save("Figures/integrated_meridional_heat_flux_ten.png", fig)
 Nlat = size(vT_samples, 2)
 op = 0.3
 qu = 0.01
-fig = Figure()
-ax = Axis(fig[1, 1]; title = "Zonal and Vertically Integrated Meridional Heat Flux",  ylabel = "Latitude [ᵒ]", xlabel = "Heat Flux [PW]")
+fig = Figure( resolution = (400, 300))
+# Zonal and Vertically Integrated Meridional Heat Flux
+ax = Axis(fig[1, 1]; title = "",  ylabel = "Latitude [ᵒ]", xlabel = "Heat Flux [PW]")
 latitude = range(15, 75, length = 128)
 lines!(ax, vT_data[:], latitude; color = (:blue, 0.3), label = "Oceananigans")
 scatter!(ax, vT_data[:], latitude; color = (:blue, 0.3), markersize = 1)
