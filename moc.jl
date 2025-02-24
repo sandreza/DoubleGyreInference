@@ -107,7 +107,8 @@ dλ = 60 / 128 * rad_to_deg
 Lλ = 60 * rad_to_deg
 
 # comment vbar uses the mean, technically we need to  sum, we multiply by the factor here 
-vfactor = reshape(cosd.(range(15, 75, length = 128)), (128, 1)) * 40007863 / 1e6  * Lλ
+R_earth = 40007863 / (2π)
+vfactor = reshape(cosd.(range(15, 75, length = 128)), (128, 1)) * R_earth / 1e6  * Lλ 
 Δz = reshape(dz, (1, 15))
 
 Ψᵛ_data = reverse(vfactor .* cumsum(reverse(v̄_data .* Δz, dims = 2), dims = 2), dims = 2)
@@ -215,3 +216,91 @@ save("Figures/v_moc_prototype_heatmap.png", fig)
 #=
 hfile = h5open("/orcd/data/raffaele/001/sandre/DoubleGyreAnalysisData/moc_5.hdf5", "r")
 =#
+
+blevels = sorted_zlevels
+MOC_data = Ψᵛ_data
+MOC_mean = Ψᵛ_samples
+MOC_samples = Ψᵛ_samples
+MOC_std = Ψᵛ_sample_std
+hiding_options = (; label = true, ticklabels = true, ticks = false, grid = false, minorgrid = false, minorticks = false)
+factor = 120
+fig = Figure(resolution = (6 * factor, 4 * factor))
+ax = Axis(fig[1, 1], xlabel = "Latitude [ᵒ]", ylabel = "Depth [m]", title = "Oceananigans")
+cval = maximum(abs.(MOC_data))
+lat = range(15, 75, length = 128)
+contour_levels = range(-cval, cval, length = 30)
+std_levels = range(0, cval/2, length = 10)
+contourf!(ax, lat, blevels, MOC_data, colormap = :balance, levels = contour_levels)
+xlims!(extrema(lat)...)
+ylims!(extrema(blevels)...)
+# lines!(ax, lat, b_surf, linewidth = 2, color=:black, linestyle=:dash)
+
+ax = Axis(fig[1, 2], xlabel = "Latitude [ᵒ]", ylabel = "Depth [m]", title = "AI Mean")
+contourf!(ax, lat, blevels, MOC_mean, colormap = :balance, levels = contour_levels)
+xlims!(extrema(lat)...)
+ylims!(extrema(blevels)...)
+# lines!(ax, lat, b_surf, linewidth = 2, color=:black, linestyle=:dash)
+hideydecorations!(ax; hiding_options...)
+ax = Axis(fig[1, 3], xlabel = "Latitude [ᵒ]", ylabel = "Depth [m]", title = "Difference")
+cm = contourf!(ax, lat, blevels, MOC_data -MOC_mean, colormap = :balance, levels = contour_levels)
+xlims!(extrema(lat)...)
+ylims!(extrema(blevels)...)
+# lines!(ax, lat, b_surf, linewidth = 2, color=:black, linestyle=:dash)
+hideydecorations!(ax; hiding_options...)
+Colorbar(fig[1, 4],  cm, label = "Sverdrup [m³ s⁻¹]")
+
+ax = Axis(fig[2, 1], xlabel = "Latitude [ᵒ]", ylabel = "Depth [m]", title = "AI Sample 1")
+contourf!(ax, lat, blevels, MOC_samples[:, :, 1], colormap = :balance, levels = contour_levels)
+xlims!(extrema(lat)...)
+ylims!(extrema(blevels)...)
+# lines!(ax, lat, b_surf, linewidth = 2, color=:black, linestyle=:dash)
+
+ax = Axis(fig[2, 2], xlabel = "Latitude [ᵒ]", ylabel = "Depth [m]", title = "AI Sample 2")
+contourf!(ax, lat, blevels, MOC_samples[:, :, end], colormap = :balance, levels = contour_levels)
+xlims!(extrema(lat)...)
+ylims!(extrema(blevels)...)
+# lines!(ax, lat, b_surf, linewidth = 2, color=:black, linestyle=:dash)
+hideydecorations!(ax; hiding_options...)
+ax = Axis(fig[2, 3], xlabel = "Latitude [ᵒ]", ylabel = "Depth [m]", title = "AI Uncertainty")
+cm = contourf!(ax, lat, blevels, MOC_std, colormap = :viridis, levels = std_levels)
+xlims!(extrema(lat)...)
+ylims!(extrema(blevels)...)
+# lines!(ax, lat, b_surf, linewidth = 2, color=:white, linestyle=:dash)
+hideydecorations!(ax; hiding_options...)
+Colorbar(fig[2, 4],  cm, label = "Sverdrup [m³ s⁻¹]")
+save(pwd() * "/Figures/v_moc_physical.png", fig)
+
+
+##
+fig = Figure()
+ax = Axis(fig[1, 1]; title = "v̄")
+contourf!(ax,lat, sorted_zlevels, v̄_data, levels = range(-0.02, 0.02, length = 20), colormap = :balance)
+ax = Axis(fig[1, 2]; title = "w̄")
+contourf!(ax, lat, sorted_zlevels,  w̄_data, levels = range(-2e-5, 2e-5, length = 20), colormap = :balance)
+
+ax = Axis(fig[2, 1]; title = "v slice mid")
+contourf!(ax,lat, sorted_zlevels, sorted_vlevels_data[64, :, :], levels = range(-0.1, 0.1, length = 20), colormap = :balance)
+ax = Axis(fig[2, 2]; title = "w slice mid")
+contourf!(ax, lat, sorted_zlevels,  sorted_wlevel_data[64, :, :], levels = range(-1e-4, 1e-4, length = 20), colormap = :balance)
+
+ax = Axis(fig[3, 1]; title = "v slice beg")
+contourf!(ax,lat, sorted_zlevels, sorted_vlevels_data[16, :, :], levels = range(-0.1, 0.1, length = 20), colormap = :balance)
+ax = Axis(fig[3, 2]; title = "w slice beg")
+contourf!(ax, lat, sorted_zlevels,  sorted_wlevel_data[16, :, :], levels = range(-1e-4, 1e-4, length = 20), colormap = :balance)
+
+ax = Axis(fig[4, 1]; title = "v slice end")
+contourf!(ax,lat, sorted_zlevels, sorted_vlevels_data[96, :, :], levels = range(-0.1, 0.1, length = 20), colormap = :balance)
+ax = Axis(fig[4, 2]; title = "w slice end")
+contourf!(ax, lat, sorted_zlevels,  sorted_wlevel_data[96, :, :], levels = range(-1e-4, 1e-4, length = 20), colormap = :balance)
+
+ax = Axis(fig[3, 3]; title = "v slice mbeg")
+contourf!(ax,lat, sorted_zlevels, sorted_vlevels_data[8, :, :], levels = range(-0.4, 0.4, length = 20), colormap = :balance)
+ax = Axis(fig[4, 3]; title = "w slice mbeg")
+contourf!(ax, lat, sorted_zlevels,  sorted_wlevel_data[8, :, :], levels = range(-2e-4, 2e-4, length = 20), colormap = :balance)
+
+ax = Axis(fig[1, 3]; title = "v slice mend")
+contourf!(ax,lat, sorted_zlevels, sorted_vlevels_data[120, :, :], levels = range(-0.1, 0.1, length = 20), colormap = :balance)
+ax = Axis(fig[2, 3]; title = "w slice mend")
+contourf!(ax, lat, sorted_zlevels,  sorted_wlevel_data[120, :, :], levels = range(-1e-4, 1e-4, length = 20), colormap = :balance)
+
+save("Figures/v_w_data.png", fig)
