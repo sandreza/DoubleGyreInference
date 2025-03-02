@@ -20,11 +20,12 @@ xticksH = (ticks([-0.25, 0, 0.25, 0.5, 0.75]),
            ticks([-0.2, -0.1, 0, 0.1]),
            ticks([-0.02, -0.01, 0, 0.01, 0.02]))
 
-qu = 0.85
+qu = 0.99
 op = 0.4
 ms = 1
+geometric_factor = cosd.(range(15, 75, length = 128))
 
-for XLast in [32]
+for XLast in [32, 128]
     fig = Figure(resolution = (1000, 500))
 
     for i in eachindex(level_indices)
@@ -45,18 +46,13 @@ for XLast in [32]
         zonal_mean_flux = (mean(field[1:XLast, :, 3], dims=1) .* mean(field[1:XLast, :, 4], dims=1))[:]
         zonal_average = mean(field[1:XLast, :, 3] .* field[1:XLast, :, 4], dims = 1)[:] .- zonal_mean_flux
         zonal_mean_flux_samples = (mean(average_samples[1:XLast, :, 3, :], dims=1) .* mean(average_samples[1:XLast, :, 4, :], dims = 1))[1, :, :]
-        zonal_mean_flux_samples = mean(zonal_mean_flux_samples, dims=2)[:]
-        zonal_average_samples = mean(average_samples[1:XLast, :, 3, :] .* average_samples[1:XLast, :, 4, :], dims = 1)[1, :, :]
-        mean_zonal_average_samples = mean(zonal_average_samples, dims = 2)[:] .- zonal_mean_flux_samples
-
-        for i in 1:100
-            zonal_average_samples[:, i] .-= zonal_mean_flux_samples
-        end
+        zonal_average_samples = mean(average_samples[1:XLast, :, 3, :] .* average_samples[1:XLast, :, 4, :], dims = 1)[1, :, :] .- zonal_mean_flux_samples
+        mean_zonal_average_samples = mean(zonal_average_samples, dims = 2)[:]
 
         if convert_units
-            zonal_average .*= density * heat_capacity
-            zonal_average_samples .*= density * heat_capacity
-            mean_zonal_average_samples .*= density * heat_capacity
+            zonal_average .*= density * heat_capacity .* geometric_factor 
+            zonal_average_samples .*= density * heat_capacity .* geometric_factor 
+            mean_zonal_average_samples .*= density * heat_capacity .* geometric_factor 
         end
 
         Nlat     = size(zonal_average_samples, 1)
@@ -70,13 +66,13 @@ for XLast in [32]
         if i == 1
             ax = Axis(fig[1, i];  ylabel = L"\text{Latitude [}^\circ\text{]}", 
                                   xlabel = L"\text{Vertical heat flux [Wm}^{-2}\text{]}", 
-                                  yticks = ticks([20, 40, 60]),
-                                  xticks = xticksV[i])
+                                  yticks = ticks([20, 40, 60]))
+                                  # xticks = xticksV[i])
         else
             ax = Axis(fig[1, i];  ylabel = "", 
                                   xlabel = L"\text{Vertical heat flux [Wm}^{-2}\text{]}", 
-                                  yticks = ([20, 40, 60], ["", "", ""]),
-                                  xticks = xticksV[i])
+                                  yticks = ([20, 40, 60], ["", "", ""]))
+                                  # xticks = xticksV[i])
         end
 
         lines!(ax, zonal_average,              latitude; color = (:blue, op), label = L"\text{Ground Truth}", linewidth=2)
@@ -94,30 +90,25 @@ for XLast in [32]
         zonal_mean_flux = (mean(field[1:XLast, :, 2], dims=1) .* mean(field[1:XLast, :, 4], dims=1))[:]
         zonal_average = mean(field[1:XLast, :, 2] .* field[1:XLast, :, 4], dims = 1)[:] .- zonal_mean_flux
         zonal_mean_flux_samples = (mean(average_samples[1:XLast, :, 2, :], dims=1) .* mean(average_samples[1:XLast, :, 4, :], dims = 1))[1, :, :]
-        zonal_mean_flux_samples = mean(zonal_mean_flux_samples, dims=2)[:]
-        zonal_average_samples = mean(average_samples[1:XLast, :, 2, :] .* average_samples[1:XLast, :, 4, :], dims = 1)[1, :, :]
-        mean_zonal_average_samples = mean(zonal_average_samples, dims = 2)[:] .- zonal_mean_flux_samples
-
-        for i in 1:100
-            zonal_average_samples[:, i] .-= zonal_mean_flux_samples
-        end
+        zonal_average_samples = mean(average_samples[1:XLast, :, 2, :] .* average_samples[1:XLast, :, 4, :], dims = 1)[1, :, :] .- zonal_mean_flux_samples
+        mean_zonal_average_samples = mean(zonal_average_samples, dims = 2)[:]
         
         if convert_units
-            zonal_average .*= density * heat_capacity
-            zonal_average_samples .*= density * heat_capacity
-            mean_zonal_average_samples .*= density * heat_capacity
+            zonal_average .*= density * heat_capacity .* geometric_factor 
+            zonal_average_samples .*= density * heat_capacity .* geometric_factor 
+            mean_zonal_average_samples .*= density * heat_capacity .* geometric_factor 
         end
 
         if i == 1
             ax = Axis(fig[2, i];  ylabel = L"\text{Latitude [}^\circ\text{]}", 
                                   xlabel = L"\text{Meridional heat flux [MWm}^{-2}\text{]}", 
-                                  yticks = ticks([20, 40, 60]),
-                                  xticks = xticksH[i])
+                                  yticks = ticks([20, 40, 60]))
+                                  # xticks = xticksH[i])
         else
             ax = Axis(fig[2, i];  ylabel = "", 
                                   xlabel = L"\text{Meridional heat flux [MWm}^{-2}\text{]}", 
-                                  yticks = ([20, 40, 60], ["", "", ""]),
-                                  xticks = xticksH[i])
+                                  yticks = ([20, 40, 60], ["", "", ""]))
+                                  # xticks = xticksH[i])
         end
 
         lines!(ax, zonal_average ./ 1e6,              latitude; color = (:blue, op), linewidth=2)
