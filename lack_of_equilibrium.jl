@@ -28,7 +28,7 @@ levels = [3, collect(9:14)...] # with respect to the original indices
 fig = Figure(resolution = (1000, 750))
 state_index = 1
 state_names = ["U", "V", "W", "T"]
-units = ["m/s", "m/s", "m/s", "K"]
+units = ["m/s", "m/s", "m/s", "ᵒC"]
 end_index = (size(averages, 1) - N2 ) ÷ 2 + N2
 chosen_levels = levels[1:2:end]
 hiding_options = (; label = true, ticklabels = true, ticks = false, grid = false, minorgrid = false, minorticks = false)
@@ -67,7 +67,7 @@ save("Figures/convergence_with_depth.png", fig)
 fig = Figure(resolution = (1000, 750))
 state_index = 1
 state_names = ["U", "V", "W", "T"]
-units = ["m/s", "m/s", "m/s", "K"]
+units = ["m/s", "m/s", "m/s", "ᵒC"]
 end_index = (size(averages, 1) - N2 ) ÷ 2 + N2
 chosen_levels = levels[1:2:end]
 

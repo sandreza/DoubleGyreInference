@@ -99,8 +99,102 @@ stdticks = ([0, 0.005, 0.01], [L"0", L"0.5", L"1"]),
            ([0, 5e-6, 1e-5, 1.5e-5], [L"0", L"0.005", L"0.01", L"0.015"]),
            ([0, 0.5, 1], [L"0", L"0.5", L"1"])
 
+function context_field_prediction(t; factor = 900)
+    fig = Figure(size = (2 * factor, 1 * factor), fontsize=20)
+    lats = range(15, 75, length = 128)
+    lons = range(0, 60, length = 128)
+    for (i, cg_ind) in enumerate([1, 3, 5, 7])
+        if i == 1
+            ax = Axis(fig[i, 1]; title = L"\text{\textbf{Free Surface Height}}")
+        else
+            ax = Axis(fig[i, 1];)
+        end
+        hidedecorations!(ax) 
+        cf = sample_tuples[cg_ind].context_field_2
+        hm = heatmap!(ax, lons, lats, cf[:, :, 1] .* eta_sigma .+ eta_mu, colormap = free_surface_color, colorrange = (-1, 1))
+        Colorbar(fig[i, 2], hm, label = L"\text{m}", ticks=([-1, -0.5, 0, 0.5, 1], [L"-1", L"-0.5", L"0", L"0.5", L"1"]), labelsize = 20, ticklabelsize = 20)
+
+        shift1 = 1
+        if i == 1
+            ax = Axis(fig[i, 2 + shift1]; title = L"\text{\textbf{Oceananigans}}")
+        else
+            ax = Axis(fig[i, 2 + shift1];)
+        end
+        hidedecorations!(ax)
+        hm = heatmap!(ax, lons, lats, field[:, :, t] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
+        if i == 1
+            ax = Axis(fig[i, 3 + shift1]; title = L"\text{\textbf{AI Average}}")
+        else
+            ax = Axis(fig[i, 3 + shift1];)
+        end
+        hidedecorations!(ax)
+        heatmap!(ax, lons, lats, sample_tuples[cg_ind].averaged_samples_2[:, :, t] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
+        if i == 1
+            ax = Axis(fig[i, 4 + shift1]; title = L"\text{\textbf{AI Sample 1}}")
+        else
+            ax = Axis(fig[i, 4 + shift1];)
+        end
+        hidedecorations!(ax)
+        heatmap!(ax, lons, lats, sample_tuples[cg_ind].samples_2[:, :, t, 10 * i] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
+        if i == 1
+            ax = Axis(fig[i, 5 + shift1]; title = L"\text{\textbf{AI Sample 2}}")
+        else
+            ax = Axis(fig[i, 5 + shift1];)
+        end
+        hidedecorations!(ax)
+        heatmap!(ax, lons, lats, sample_tuples[cg_ind].samples_2[:, :, t, 20 * i] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
+        if i == 1
+            ax = Axis(fig[i, 6 + shift1]; title = L"\text{\textbf{Data Mean}}")
+        else
+            ax = Axis(fig[i, 6 + shift1];)
+        end
+        hidedecorations!(ax)
+        heatmap!(ax, lons, lats, data_tuple.mean_field[:, :, t] .* σ[t] .+ μ[t], colormap = colormaps[t], colorrange = cranges[t])
+        Colorbar(fig[i, 7 + shift1], hm, label=units[t], ticks=meanticks[t], labelsize=20, ticklabelsize=20)
+
+        if i == 1
+            ax = Axis(fig[i, 9]; title = L"\text{\textbf{AI Uncertainty}}")
+        else
+            ax = Axis(fig[i, 9];)
+        end
+
+        hidedecorations!(ax)
+        hm = heatmap!(ax, lons, lats, sample_tuples[cg_ind].std_samples_2[:, :, t] .* σ[t] , colormap = :viridis, colorrange = ((0, 1/4) .* σ[t]))
+        if i == 1
+            ax = Axis(fig[i, 10]; title =  L"\text{\textbf{Data Standard Deviation}}")
+        else
+            ax = Axis(fig[i, 10];)
+        end
+        hidedecorations!(ax)
+        heatmap!(ax, lons, lats, data_tuple.std_field[:, :, t] .* σ[t], colormap = :viridis, colorrange = ((0, 1/4) .* σ[t]))
+        Colorbar(fig[i, 11], hm, label = units[t], ticks=stdticks[t], labelsize=20, ticklabelsize = 20)
+    end
+    return fig
+end
+
+fig = context_field_prediction(1; factor = 1200)
+save("Figures/context_field_and_prediction_velocity.png", fig)
+save("Figures/context_field_and_prediction_velocity.eps", fig)
+
+fig = context_field_prediction(4; factor = 1200)
+save("Figures/context_field_and_prediction_temperature.png", fig)
+save("Figures/context_field_and_prediction_temperature.eps", fig)
+
+fig = Figure(size = (1800, 900))
+units = [L"\text{cm/s}", L"\text{cm/s}", L"\text{mm/s}", L"^\circ\text{C}"]
+
+meanticks = (([-0.03, 0, 0.03], [L"-3", L"0", L"3"]),
+            ([-0.05, 0, 0.05], [L"-5", L"0", L"5"]),
+            ([-5e-5, 0, 5e-5], [L"-0.005", L"0", L"0.005"]),
+            ([0, 5, 10], [L"0", L"5", L"10"]))
+
+stdticks = ([0, 0.005, 0.01], [L"0", L"0.5", L"1"]),
+           ([0, 0.005, 0.01, 0.015, 0.02], [L"0", L"0.5", L"1", L"1.5", L"2"]),
+           ([0, 5e-6, 1e-5, 1.5e-5], [L"0", L"0.005", L"0.01", L"0.015"]),
+           ([0, 0.5, 1], [L"0", L"0.5", L"1"])
+
 function context_field_prediction(t)
-    fig = Figure(size = (1800, 900))
+    fig = Figure(size = (1800, 900), fontsize=20)
     lats = range(15, 75, length = 128)
     lons = range(0, 60, length = 128)
     for (i, cg_ind) in enumerate([1, 3, 5, 7])

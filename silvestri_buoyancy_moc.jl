@@ -203,3 +203,134 @@ ax = Axis(fig[2, 3]; title = "b slice mend")
 contourf!(ax, lat, sorted_zlevels,  sorted_blevels_data[120, :, :], levels = 10)
 
 save("Figures/v_b_data.png", fig)
+
+##
+barotropic_v = sum(sorted_vlevels_data .* reshape(dz, (1, 1, 15)), dims = 3) / 1800
+deviation_v =  sorted_vlevels_data .- barotropic_v
+barotropic_v_3D = deviation_v * 0 .+ barotropic_v
+normdev = norm(deviation_v .* reshape(dz, (1, 1, 15)))
+normbar = norm(barotropic_v_3D .* reshape(dz, (1, 1, 15)))
+normfull = norm(sorted_vlevels_data .* reshape(dz, (1, 1, 15)))
+normdev / (normdev + normbar)
+normbar / (normdev + normbar)
+
+normdev_gyre = norm(deviation_v[1:20, 30:60, :])  # weighting the surface values more
+normbar_gyre = norm(barotropic_v_3D[1:20, 30:60, :]) # weighting the surface values more
+normdev_gyre / (normdev_gyre + normbar_gyre)
+normbar_gyre / (normdev_gyre + normbar_gyre)
+
+level_index = 15
+sorted_zlevels[level_index]
+normdev_plots = norm(deviation_v[:, :, level_index]) #smaller means closer to barotropic
+normbar_plots = norm(barotropic_v_3D[:, :, level_index]) # smaller means closer to baroclinic
+normfull_plots = norm(sorted_vlevels_data[:, :, level_index])
+
+normdev_plots / (normdev_plots + normbar_plots)
+normbar_plots / (normdev_plots + normbar_plots)
+
+
+fig = Figure()
+slices = collect(1:8:128)
+cmaxs = []
+for i in 1:16
+    ii = (i-1)÷4 + 1
+    jj = (i-1)%4 + 1
+    ax = Axis(fig[ii, jj]; title = "v slice $i")
+    field = deviation_v[slices[i], :, :]
+    cmax = maximum(field)
+    push!(cmaxs, cmax)
+    contourf!(ax,lat, sorted_zlevels, field, levels = range(- cmax,  cmax, length = 20), colormap = :balance)
+end
+save("Figures/v_deviation_data.png", fig)
+fig = Figure()
+slices = collect(1:8:128)
+for i in 1:16
+    ii = (i-1)÷4 + 1
+    jj = (i-1)%4 + 1
+    ax = Axis(fig[ii, jj]; title = "v slice $i")
+    cmax = cmaxs[i]
+    contourf!(ax,lat, sorted_zlevels, barotropic_v_3D[slices[i], :, :], levels = range(- cmax,  cmax, length = 20), colormap = :balance)
+end
+save("Figures/v_barotropic_data.png", fig)
+# plotting them together 
+
+fig = Figure(resolution = (2000, 1000))
+slices = collect(1:8:128)
+for i in 1:16
+    ii = (i-1)÷4 + 1
+    jj = (i-1)%4 + 1
+    ax = Axis(fig[ii, 2*jj]; title = "tropic, v slice $i")
+    cmax = cmaxs[i]
+    contourf!(ax,lat, sorted_zlevels, barotropic_v_3D[slices[i], :, :], levels = range(- cmax,  cmax, length = 20), colormap = :balance)
+    ax = Axis(fig[ii, 2*(jj-1) + 1]; title = "clinic, v slice $i")
+    cmax = cmaxs[i]
+    contourf!(ax,lat, sorted_zlevels, deviation_v[slices[i], :, :], levels = range(- cmax,  cmax, length = 20), colormap = :balance)
+end
+save("Figures/v_tropic_clinic_data.png", fig)
+
+
+fig = Figure(resolution = (3000, 1000))
+slices = collect(1:8:128)
+for i in 1:16
+    ii = (i-1)÷4 + 1
+    jj = (i-1)%4 + 1
+    ax = Axis(fig[ii, 3*jj]; title = "tropic, v slice $i")
+    cmax = cmaxs[i]
+    contourf!(ax,lat, sorted_zlevels, barotropic_v_3D[slices[i], :, :], levels = range(- cmax,  cmax, length = 20), colormap = :balance)
+    ax = Axis(fig[ii, 3*(jj-1) + 1]; title = "clinic, v slice $i")
+    cmax = cmaxs[i]
+    contourf!(ax,lat, sorted_zlevels, deviation_v[slices[i], :, :], levels = range(- cmax,  cmax, length = 20), colormap = :balance)
+    ax = Axis(fig[ii, 3*(jj-1) + 2]; title = "full, v slice $i")
+    cmax = cmaxs[i]
+    contourf!(ax,lat, sorted_zlevels, sorted_vlevels_data[slices[i], :, :], levels = range(- cmax,  cmax, length = 20), colormap = :balance)
+end
+save("Figures/v_tropic_clinic_full_data.png", fig)
+
+##
+barotropic_v = sorted_vlevels_data[:, :, 15:15]
+deviation_v =  sorted_vlevels_data .- barotropic_v
+barotropic_v_3D = deviation_v * 0 .+ barotropic_v
+normdev = norm(deviation_v .* reshape(dz, (1, 1, 15)))
+normbar = norm(barotropic_v .* reshape(dz, (1, 1, 15)))
+
+normdev / (normdev + normbar)
+normbar / (normdev + normbar)
+
+fig = Figure()
+slices = collect(1:8:128)
+cmaxs = []
+for i in 1:16
+    ii = (i-1)÷4 + 1
+    jj = (i-1)%4 + 1
+    ax = Axis(fig[ii, jj]; title = "v slice $i")
+    field = deviation_v[slices[i], :, :]
+    cmax = maximum(field) 
+    push!(cmaxs, cmax)
+    contourf!(ax,lat, sorted_zlevels, field, levels = range(- cmax,  cmax, length = 20), colormap = :balance)
+end
+save("Figures/v_surface_deviation_data.png", fig)
+fig = Figure()
+slices = collect(1:8:128)
+for i in 1:16
+    ii = (i-1)÷4 + 1
+    jj = (i-1)%4 + 1
+    ax = Axis(fig[ii, jj]; title = "v slice $i")
+    cmax = cmaxs[i]
+    contourf!(ax,lat, sorted_zlevels, barotropic_v_3D[slices[i], :, :], levels = range(- cmax,  cmax, length = 20), colormap = :balance)
+end
+save("Figures/v_surface_data.png", fig)
+# plotting them together 
+
+fig = Figure(resolution = (2000, 1000))
+slices = collect(1:8:128)
+for i in 1:16
+    ii = (i-1)÷4 + 1
+    jj = (i-1)%4 + 1
+    ax = Axis(fig[ii, 2*jj]; title = "tropic, v slice $i")
+    cmax = cmaxs[i]
+    contourf!(ax,lat, sorted_zlevels, barotropic_v_3D[slices[i], :, :], levels = range(- cmax,  cmax, length = 20), colormap = :balance)
+    ax = Axis(fig[ii, 2*(jj-1) + 1]; title = "clinic, v slice $i")
+    cmax = cmaxs[i]
+    contourf!(ax,lat, sorted_zlevels, deviation_v[slices[i], :, :], levels = range(- cmax,  cmax, length = 20), colormap = :balance)
+end
+save("Figures/v_surface_and_surface_deviation_data.png", fig)
