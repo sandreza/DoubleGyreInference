@@ -193,6 +193,7 @@ stdticks = ([0, 0.005, 0.01], [L"0", L"0.5", L"1"]),
            ([0, 5e-6, 1e-5, 1.5e-5], [L"0", L"0.005", L"0.01", L"0.015"]),
            ([0, 0.5, 1], [L"0", L"0.5", L"1"])
 
+#=
 function context_field_prediction(t)
     fig = Figure(size = (1800, 900), fontsize=20)
     lats = range(15, 75, length = 128)
@@ -240,6 +241,7 @@ save("Figures/context_field_and_prediction_velocity.eps", fig)
 fig = context_field_prediction(4)
 save("Figures/context_field_and_prediction_temperature.png", fig)
 save("Figures/context_field_and_prediction_temperature.eps", fig)
+=#
 
 fig = Figure(size = (1800, 900))
 lats = range(15, 75, length = 128)
@@ -297,3 +299,37 @@ for (i, t) in enumerate([1, 2, 3, 4])
     Colorbar(fig[i, 11], hm, label = units[t], ticks=stdticks[t], labelsize=20, ticklabelsize = 20)
 end
 end
+
+##
+
+t = 4
+factor = 250
+fig = Figure(size = (6*factor, factor))
+lats = range(15, 75, length = 128)
+lons = range(0, 60, length = 128)
+for (i, cg_ind) in enumerate([7])
+    ax = Axis(fig[i, 1]; title = L"\text{\textbf{AI Average}}")
+    heatmap!(ax, lons, lats, sample_tuples[cg_ind].averaged_samples_2[:, :, t] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
+    hidedecorations!(ax)
+    ax = Axis(fig[i, 2]; title = L"\text{\textbf{Data Mean}}")
+    hidedecorations!(ax)
+    hm = heatmap!(ax, lons, lats, data_tuple.mean_field[:, :, t] .* σ[t] .+ μ[t], colormap = colormaps[t], colorrange = cranges[t])
+    Colorbar(fig[i, 3], hm, label=units[t], ticks=meanticks[t], labelsize=20, ticklabelsize=20)
+
+    shift =1 
+    Δ =  abs.(sample_tuples[cg_ind].averaged_samples_2[:, :, t] - data_tuple.mean_field[:, :, t])
+    ax = Axis(fig[i, 3 + shift] ; title = L"\text{\textbf{Absolute Difference}}")
+    heatmap!(ax, lons, lats, Δ .* σ[t], colormap = :viridis, colorrange = (0, 1/4) .* σ[t])
+    hidedecorations!(ax)
+    ax = Axis(fig[i, 4 + shift]; title =  L"\text{\textbf{AI Uncertainty}}")
+    hidedecorations!(ax)
+    hm = heatmap!(ax, lons, lats, sample_tuples[cg_ind].std_samples_2[:, :, t] .* σ[t] , colormap = :viridis, colorrange = ((0, 1/4) .* σ[t]))
+    ax = Axis(fig[i, 5 + shift]; title =  L"\text{\textbf{Sum}}")
+    hidedecorations!(ax)
+    hm = heatmap!(ax, lons, lats, sample_tuples[cg_ind].std_samples_2[:, :, t] .* σ[t] + Δ .* σ[t], colormap = :viridis, colorrange = ((0, 1/4) .* σ[t]))
+    ax = Axis(fig[i, 6 + shift]; title =  L"\text{\textbf{Data Standard Deviation}}")
+    hidedecorations!(ax)
+    hm = heatmap!(ax, lons, lats, data_tuple.std_field[:, :, t] .* σ[t], colormap = :viridis, colorrange = ((0, 1/4) .* σ[t]))
+    Colorbar(fig[i, 7 + shift], hm, label = units[t], ticks=stdticks[t], labelsize=20, ticklabelsize = 20)
+end
+save("Figures/context_field_and_prediction_temperature_difference.png", fig)
