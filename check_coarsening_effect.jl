@@ -105,11 +105,12 @@ colors = [:red, :blue, :green, :orange, :purple, :black]
 string_label = [string(zlevel)[2:4] * " [m]" for zlevel in zlevels]
 string_label[end] = "79 [m]"
 string_label[1] = "1355 [m]"
-
+units = ["m/s", "m/s", "m/s", "ᵒC"]
 for k in 1:3
-    fig = Figure(resolution = (1500, 300)) 
+    factor = 300
+    fig = Figure(resolution = (5 * factor, 1 * factor)) 
     for i in 1:4
-        ax = Axis(fig[1, i]; title = "Error " * fieldnames[i], ylabel = units[i], xlabel)
+        ax = Axis(fig[1, i]; title = "Discrepancy " * fieldnames[i], ylabel = units[i], xlabel)
         for ii in eachindex(string_label)
             error_list = level_errors[ii]
             scale = scales[ii]
@@ -118,7 +119,7 @@ for k in 1:3
             scatter!(ax, [0, 0]; markersize = 0)
             ax.xticks = cglist
         end
-        if i == 1
+        if i == 2
             axislegend(ax, position = :lt)
         end
     end
@@ -130,7 +131,7 @@ end
 k = 2
 fig = Figure(resolution = (2250, 450), fontsize = 30) 
 for i in 1:4
-    ax = Axis(fig[1, i]; title = "Error " * fieldnames[i], ylabel = units[i], xlabel)
+    ax = Axis(fig[1, i]; title = "Discrepancy " * fieldnames[i], ylabel = units[i], xlabel)
     for ii in eachindex(string_label)
         error_list = level_errors[ii]
         scale = scales[ii]
@@ -150,7 +151,7 @@ save("Figures/prediction_error_at_various_levels_norm_" *  normlabel[k] * ".png"
 fig = Figure(resolution = (1500, 3 * 300)) 
 for k in 1:3
     for i in 1:4
-        ax = Axis(fig[k, i]; title = normlabel[k] * " Error " * fieldnames[i], ylabel = units[i], xlabel)
+        ax = Axis(fig[k, i]; title = normlabel[k] * " Discrepancy " * fieldnames[i], ylabel = units[i], xlabel)
         for ii in eachindex(string_label)
             error_list = level_errors[ii]
             scale = scales[ii]
