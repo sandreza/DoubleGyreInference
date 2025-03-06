@@ -62,8 +62,6 @@ for (i, level) in enumerate(chosen_levels)
 end
 save("Figures/convergence_with_depth.png", fig)
 
-
-
 fig = Figure(resolution = (1000, 750))
 state_index = 1
 state_names = ["U", "V", "W", "T"]

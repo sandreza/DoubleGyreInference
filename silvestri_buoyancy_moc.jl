@@ -84,20 +84,25 @@ end
     Nb = length(blevels)
     Δb = blevels[2] - blevels[1]
 
+    bmax = maximum(b[i, j, :])
+    bmin = minimum(b[i, j, :])
     for k in 1:Nz
         if b[i, j, k] < blevels[end]
             blev = searchsortedfirst(blevels, b[i, j, k])
-            ψ[i, j, blev] += v[i, j, k] * dx[i] * dz[k]
+            if bmin ≤ blevels[blev] ≤ bmax 
+                ψ[i, j, blev] += v[i, j, k] * dx[i] * dz[k]
+            end
         end
     end
 
-    ψint[i, j, 1] = Δb * ψ[i, j, 1]
+    ψint[i, j, 1] = ψ[i, j, 1]
     bmax = maximum(b[i, j, :])
     for blev in 2:Nb
-        if bmax > blevels[blev]
-            ψint[i, j, blev] = ψint[i, j, blev-1] + Δb * ψ[i, j, blev]
+        if bmin ≤ blevels[blev] ≤ bmax 
+            ψint[i, j, blev] = ψint[i, j, blev-1] + ψ[i, j, blev]
         end
     end
+
 end
 
 # Calculate the MOC!
@@ -112,14 +117,15 @@ sorted_blevels_data = blevels_data[:, :, permuted_indices]
 sorted_vlevels_samples = vlevels_samples[:, :, permuted_indices, :]
 sorted_blevels_samples = blevels_samples[:, :, permuted_indices, :]
 
+geometric_factor = reshape(cosd.(range(15, 75, length = 128)), (128, 1))
 blevels = range(extrema(sorted_blevels_data)..., length = 128 * 2)
-MOC_data = calculate_residual_MOC(sorted_vlevels_data, sorted_blevels_data, dx, dy, dz; blevels=blevels)
-MOC_samples = [calculate_residual_MOC(sorted_vlevels_samples[:, :, :, i], sorted_blevels_samples[:, :, :, i], dx, dy, dz; blevels=blevels) for i in ProgressBar(1:100)]
+sverdrup = 10^6
+MOC_data = (calculate_residual_MOC(sorted_vlevels_data, sorted_blevels_data, dx, dy, dz; blevels=blevels) / sverdrup) .* geometric_factor 
+MOC_samples = [geometric_factor .* calculate_residual_MOC(sorted_vlevels_samples[:, :, :, i], sorted_blevels_samples[:, :, :, i], dx, dy, dz; blevels=blevels) / sverdrup for i in ProgressBar(1:100)] 
 MOC_mean = mean(MOC_samples)
 MOC_std = std(MOC_samples)
 
 b_surf = max.(0, maximum(blevels_data[:, :, 15], dims=1)[1, :])
-
 
 hiding_options = (; label = true, ticklabels = true, ticks = false, grid = false, minorgrid = false, minorticks = false)
 factor = 120
@@ -146,7 +152,7 @@ xlims!(extrema(lat)...)
 ylims!(extrema(blevels)...)
 lines!(ax, lat, b_surf, linewidth = 2, color=:black, linestyle=:dash)
 hideydecorations!(ax; hiding_options...)
-Colorbar(fig[1, 4],  cm, label = "[m³ s⁻¹]")
+Colorbar(fig[1, 4],  cm, label = "Sverdrup [m³ s⁻¹]")
 
 ax = Axis(fig[2, 1], xlabel = "Latitude [ᵒ]", ylabel = "Buoyancy [m²s⁻¹]", title = "AI Sample 1")
 contourf!(ax, lat, blevels, MOC_samples[1], colormap = :balance, levels = contour_levels)
@@ -166,11 +172,11 @@ xlims!(extrema(lat)...)
 ylims!(extrema(blevels)...)
 lines!(ax, lat, b_surf, linewidth = 2, color=:white, linestyle=:dash)
 hideydecorations!(ax; hiding_options...)
-Colorbar(fig[2, 4],  cm, label = "[m³ s⁻¹]")
+Colorbar(fig[2, 4],  cm, label = "Sverdrup [m³ s⁻¹]")
 save(pwd() * "/Figures/moc_data.png", fig)
 
 ##
-
+#=
 fig = Figure()
 ax = Axis(fig[1, 1]; title = "v̄")
 contourf!(ax,lat, sorted_zlevels, mean(sorted_vlevels_data, dims = 1)[1, :, :], levels = range(-0.02, 0.02, length = 20), colormap = :balance)
@@ -334,3 +340,4 @@ for i in 1:16
     contourf!(ax,lat, sorted_zlevels, deviation_v[slices[i], :, :], levels = range(- cmax,  cmax, length = 20), colormap = :balance)
 end
 save("Figures/v_surface_and_surface_deviation_data.png", fig)
+=#

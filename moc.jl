@@ -220,7 +220,7 @@ hfile = h5open("/orcd/data/raffaele/001/sandre/DoubleGyreAnalysisData/moc_5.hdf5
 blevels = sorted_zlevels
 MOC_data = Ψᵛ_data
 MOC_mean = Ψᵛ_samples
-MOC_samples = Ψᵛ_samples
+MOC_samples = Ψᵛ_sample_members
 MOC_std = Ψᵛ_sample_std
 hiding_options = (; label = true, ticklabels = true, ticks = false, grid = false, minorgrid = false, minorticks = false)
 factor = 120
