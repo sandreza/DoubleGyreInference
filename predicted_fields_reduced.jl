@@ -99,237 +99,144 @@ stdticks = ([0, 0.005, 0.01], [L"0", L"0.5", L"1"]),
            ([0, 5e-6, 1e-5, 1.5e-5], [L"0", L"0.005", L"0.01", L"0.015"]),
            ([0, 0.5, 1], [L"0", L"0.5", L"1"])
 
-function context_field_prediction(t; factor = 900)
-    fig = Figure(size = (2 * factor, 1 * factor), fontsize=20)
-    lats = range(15, 75, length = 128)
-    lons = range(0, 60, length = 128)
-    for (i, cg_ind) in enumerate([1, 3, 5, 7])
-        if i == 1
-            ax = Axis(fig[i, 1]; title = L"\text{\textbf{Free Surface Height}}")
-        else
-            ax = Axis(fig[i, 1];)
-        end
-        hidedecorations!(ax) 
-        cf = sample_tuples[cg_ind].context_field_2
-        hm = heatmap!(ax, lons, lats, cf[:, :, 1] .* eta_sigma .+ eta_mu, colormap = free_surface_color, colorrange = (-1, 1))
-        Colorbar(fig[i, 2], hm, label = L"\text{m}", ticks=([-1, -0.5, 0, 0.5, 1], [L"-1", L"-0.5", L"0", L"0.5", L"1"]), labelsize = 20, ticklabelsize = 20)
-
-        shift1 = 1
-        if i == 1
-            ax = Axis(fig[i, 2 + shift1]; title = L"\text{\textbf{Oceananigans}}")
-        else
-            ax = Axis(fig[i, 2 + shift1];)
-        end
-        hidedecorations!(ax)
-        hm = heatmap!(ax, lons, lats, field[:, :, t] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
-        if i == 1
-            ax = Axis(fig[i, 3 + shift1]; title = L"\text{\textbf{AI Average}}")
-        else
-            ax = Axis(fig[i, 3 + shift1];)
-        end
-        hidedecorations!(ax)
-        heatmap!(ax, lons, lats, sample_tuples[cg_ind].averaged_samples_2[:, :, t] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
-        if i == 1
-            ax = Axis(fig[i, 4 + shift1]; title = L"\text{\textbf{AI Sample 1}}")
-        else
-            ax = Axis(fig[i, 4 + shift1];)
-        end
-        hidedecorations!(ax)
-        heatmap!(ax, lons, lats, sample_tuples[cg_ind].samples_2[:, :, t, 10 * i] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
-        if i == 1
-            ax = Axis(fig[i, 5 + shift1]; title = L"\text{\textbf{AI Sample 2}}")
-        else
-            ax = Axis(fig[i, 5 + shift1];)
-        end
-        hidedecorations!(ax)
-        heatmap!(ax, lons, lats, sample_tuples[cg_ind].samples_2[:, :, t, 20 * i] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
-        if i == 1
-            ax = Axis(fig[i, 6 + shift1]; title = L"\text{\textbf{Data Mean}}")
-        else
-            ax = Axis(fig[i, 6 + shift1];)
-        end
-        hidedecorations!(ax)
-        heatmap!(ax, lons, lats, data_tuple.mean_field[:, :, t] .* σ[t] .+ μ[t], colormap = colormaps[t], colorrange = cranges[t])
-        Colorbar(fig[i, 7 + shift1], hm, label=units[t], ticks=meanticks[t], labelsize=20, ticklabelsize=20)
-
-        if i == 1
-            ax = Axis(fig[i, 9]; title = L"\text{\textbf{AI Uncertainty}}")
-        else
-            ax = Axis(fig[i, 9];)
-        end
-
-        hidedecorations!(ax)
-        hm = heatmap!(ax, lons, lats, sample_tuples[cg_ind].std_samples_2[:, :, t] .* σ[t] , colormap = :viridis, colorrange = ((0, 1/4) .* σ[t]))
-        if i == 1
-            ax = Axis(fig[i, 10]; title =  L"\text{\textbf{Data Standard Deviation}}")
-        else
-            ax = Axis(fig[i, 10];)
-        end
-        hidedecorations!(ax)
-        heatmap!(ax, lons, lats, data_tuple.std_field[:, :, t] .* σ[t], colormap = :viridis, colorrange = ((0, 1/4) .* σ[t]))
-        Colorbar(fig[i, 11], hm, label = units[t], ticks=stdticks[t], labelsize=20, ticklabelsize = 20)
-    end
-    return fig
-end
-
-fig = context_field_prediction(1; factor = 1200)
-save("Figures/context_field_and_prediction_velocity.png", fig)
-save("Figures/context_field_and_prediction_velocity.eps", fig)
-
-fig = context_field_prediction(4; factor = 1200)
-save("Figures/context_field_and_prediction_temperature.png", fig)
-save("Figures/context_field_and_prediction_temperature.eps", fig)
-
-fig = Figure(size = (1800, 900))
-units = [L"\text{cm/s}", L"\text{cm/s}", L"\text{mm/s}", L"^\circ\text{C}"]
-
-meanticks = (([-0.03, 0, 0.03], [L"-3", L"0", L"3"]),
-            ([-0.05, 0, 0.05], [L"-5", L"0", L"5"]),
-            ([-5e-5, 0, 5e-5], [L"-0.005", L"0", L"0.005"]),
-            ([0, 5, 10], [L"0", L"5", L"10"]))
-
-stdticks = ([0, 0.005, 0.01], [L"0", L"0.5", L"1"]),
-           ([0, 0.005, 0.01, 0.015, 0.02], [L"0", L"0.5", L"1", L"1.5", L"2"]),
-           ([0, 5e-6, 1e-5, 1.5e-5], [L"0", L"0.005", L"0.01", L"0.015"]),
-           ([0, 0.5, 1], [L"0", L"0.5", L"1"])
-
-#=
-function context_field_prediction(t)
-    fig = Figure(size = (1800, 900), fontsize=20)
-    lats = range(15, 75, length = 128)
-    lons = range(0, 60, length = 128)
-    for (i, cg_ind) in enumerate([1, 3, 5, 7])
+function context_field_prediction!(fig, i, cg_ind, t)
+    if i == 1
         ax = Axis(fig[i, 1]; title = L"\text{\textbf{Free Surface Height}}")
-        hidedecorations!(ax) 
-        cf = sample_tuples[cg_ind].context_field_2
-        hm = heatmap!(ax, lons, lats, cf[:, :, 1] .* eta_sigma .+ eta_mu, colormap = free_surface_color, colorrange = (-1, 1))
-        Colorbar(fig[i, 2], hm, label = L"\text{m}", ticks=([-1, -0.5, 0, 0.5, 1], [L"-1", L"-0.5", L"0", L"0.5", L"1"]), labelsize = 20, ticklabelsize = 20)
-
-        shift1 = 1
-        ax = Axis(fig[i, 2 + shift1]; title = L"\text{\textbf{Oceananigans}}")
-        hidedecorations!(ax)
-        hm = heatmap!(ax, lons, lats, field[:, :, t] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
-        ax = Axis(fig[i, 3 + shift1]; title = L"\text{\textbf{AI Average}}")
-        hidedecorations!(ax)
-        heatmap!(ax, lons, lats, sample_tuples[cg_ind].averaged_samples_2[:, :, t] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
-        ax = Axis(fig[i, 4 + shift1] ; title = L"\text{\textbf{AI Sample 1}}")
-        hidedecorations!(ax)
-        heatmap!(ax, lons, lats, sample_tuples[cg_ind].samples_2[:, :, t, 10 * i] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
-        ax = Axis(fig[i, 5 + shift1]; title = L"\text{\textbf{AI Sample 2}}")
-        hidedecorations!(ax)
-        heatmap!(ax, lons, lats, sample_tuples[cg_ind].samples_2[:, :, t, 20 * i] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
-        ax = Axis(fig[i, 6 + shift1]; title = L"\text{\textbf{Data Mean}}")
-        hidedecorations!(ax)
-        heatmap!(ax, lons, lats, data_tuple.mean_field[:, :, t] .* σ[t] .+ μ[t], colormap = colormaps[t], colorrange = cranges[t])
-        Colorbar(fig[i, 7 + shift1], hm, label=units[t], ticks=meanticks[t], labelsize=20, ticklabelsize=20)
-
-        ax = Axis(fig[i, 9]; title =  L"\text{\textbf{AI Uncertainty}}")
-        hidedecorations!(ax)
-        hm = heatmap!(ax, lons, lats, sample_tuples[cg_ind].std_samples_2[:, :, t] .* σ[t] , colormap = :viridis, colorrange = ((0, 1/4) .* σ[t]))
-        ax = Axis(fig[i, 10]; title =  L"\text{\textbf{Data Standard Deviation}}")
-        hidedecorations!(ax)
-        heatmap!(ax, lons, lats, data_tuple.std_field[:, :, t] .* σ[t], colormap = :viridis, colorrange = ((0, 1/4) .* σ[t]))
-        Colorbar(fig[i, 11], hm, label = units[t], ticks=stdticks[t], labelsize=20, ticklabelsize = 20)
+    else
+        ax = Axis(fig[i, 1];)
     end
-    return fig
-end
-
-fig = context_field_prediction(1)
-save("Figures/context_field_and_prediction_velocity.png", fig)
-save("Figures/context_field_and_prediction_velocity.eps", fig)
-
-fig = context_field_prediction(4)
-save("Figures/context_field_and_prediction_temperature.png", fig)
-save("Figures/context_field_and_prediction_temperature.eps", fig)
-=#
-
-fig = Figure(size = (1800, 900))
-lats = range(15, 75, length = 128)
-lons = range(0, 60, length = 128)
-cg_ind = 1
-for (i, t) in enumerate([1, 2, 3, 4])
-    ax = Axis(fig[i, 1]; title = L"\text{\textbf{Free Surface Height}}")
-cg_ind = 1
-for (i, t) in enumerate([1, 2, 3, 4])
-    ax = Axis(fig[i, 1]; title = L"\text{\textbf{Free Surface Height}}")
     hidedecorations!(ax) 
     cf = sample_tuples[cg_ind].context_field_2
     hm = heatmap!(ax, lons, lats, cf[:, :, 1] .* eta_sigma .+ eta_mu, colormap = free_surface_color, colorrange = (-1, 1))
-    Colorbar(fig[i, 2], hm, label = L"\text{m}", ticks=([-1, -0.5, 0, 0.5, 1], [L"-1", L"-0.5", L"0", L"0.5", L"1"]), labelsize = 20, ticklabelsize = 20)
-    Colorbar(fig[i, 2], hm, label = L"\text{m}", ticks=([-1, -0.5, 0, 0.5, 1], [L"-1", L"-0.5", L"0", L"0.5", L"1"]), labelsize = 20, ticklabelsize = 20)
+    Colorbar(fig[i, 2], hm, label = L"\text{m}", ticks=([-1, -0.5, 0, 0.5, 1], [L"-1", L"-0.5", L"0", L"0.5", L"1"]), labelsize=28, ticklabelsize=28)
 
     shift1 = 1
-    ax = Axis(fig[i, 2 + shift1]; title = L"\text{\textbf{Oceananigans}}")
-    ax = Axis(fig[i, 2 + shift1]; title = L"\text{\textbf{Oceananigans}}")
+    if i == 1
+        ax = Axis(fig[i, 2 + shift1]; title = L"\text{\textbf{Oceananigans}}")
+    else
+        ax = Axis(fig[i, 2 + shift1];)
+    end
     hidedecorations!(ax)
     hm = heatmap!(ax, lons, lats, field[:, :, t] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
-    ax = Axis(fig[i, 3 + shift1]; title = L"\text{\textbf{AI Average}}")
-    hm = heatmap!(ax, lons, lats, field[:, :, t] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
-    ax = Axis(fig[i, 3 + shift1]; title = L"\text{\textbf{AI Average}}")
+    if i == 1
+        ax = Axis(fig[i, 3 + shift1]; title = L"\text{\textbf{AI Average}}")
+    else
+        ax = Axis(fig[i, 3 + shift1];)
+    end
     hidedecorations!(ax)
     heatmap!(ax, lons, lats, sample_tuples[cg_ind].averaged_samples_2[:, :, t] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
-    ax = Axis(fig[i, 4 + shift1] ; title = L"\text{\textbf{AI Sample 1}}")
-    heatmap!(ax, lons, lats, sample_tuples[cg_ind].averaged_samples_2[:, :, t] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
-    ax = Axis(fig[i, 4 + shift1] ; title = L"\text{\textbf{AI Sample 1}}")
+    if i == 1
+        ax = Axis(fig[i, 4 + shift1]; title = L"\text{\textbf{AI Sample 1}}")
+    else
+        ax = Axis(fig[i, 4 + shift1];)
+    end
     hidedecorations!(ax)
     heatmap!(ax, lons, lats, sample_tuples[cg_ind].samples_2[:, :, t, 10 * i] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
-    ax = Axis(fig[i, 5 + shift1]; title = L"\text{\textbf{AI Sample 2}}")
-    heatmap!(ax, lons, lats, sample_tuples[cg_ind].samples_2[:, :, t, 10 * i] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
-    ax = Axis(fig[i, 5 + shift1]; title = L"\text{\textbf{AI Sample 2}}")
+    if i == 1
+        ax = Axis(fig[i, 5 + shift1]; title = L"\text{\textbf{Data mean}}")
+    else
+        ax = Axis(fig[i, 5 + shift1];)
+    end
     hidedecorations!(ax)
-    heatmap!(ax, lons, lats, sample_tuples[cg_ind].samples_2[:, :, t, 20 * i] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
-    ax = Axis(fig[i, 6 + shift1]; title = L"\text{\textbf{Data Mean}}")
-    heatmap!(ax, lons, lats, sample_tuples[cg_ind].samples_2[:, :, t, 20 * i] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
-    ax = Axis(fig[i, 6 + shift1]; title = L"\text{\textbf{Data Mean}}")
-    hidedecorations!(ax)
+    # Removed extra sample plot
+    # heatmap!(ax, lons, lats, sample_tuples[cg_ind].samples_2[:, :, t, 20 * i] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
+    # if i == 1
+    #     ax = Axis(fig[i, 6 + shift1]; title = L"\text{\textbf{Data Mean}}")
+    # else
+    #     ax = Axis(fig[i, 6 + shift1];)
+    # end
+    # hidedecorations!(ax)
     heatmap!(ax, lons, lats, data_tuple.mean_field[:, :, t] .* σ[t] .+ μ[t], colormap = colormaps[t], colorrange = cranges[t])
-    Colorbar(fig[i, 7 + shift1], hm, label=units[t], ticks=meanticks[t], labelsize=20, ticklabelsize=20)
-    heatmap!(ax, lons, lats, data_tuple.mean_field[:, :, t] .* σ[t] .+ μ[t], colormap = colormaps[t], colorrange = cranges[t])
-    Colorbar(fig[i, 7 + shift1], hm, label=units[t], ticks=meanticks[t], labelsize=20, ticklabelsize=20)
+    Colorbar(fig[i, 6 + shift1], hm, label=units[t], ticks=meanticks[t], labelsize=28, ticklabelsize=28)
 
-    ax = Axis(fig[i, 9]; title =  L"\text{\textbf{AI Uncertainty}}")
-    ax = Axis(fig[i, 9]; title =  L"\text{\textbf{AI Uncertainty}}")
+    if i == 1
+        ax = Axis(fig[i, 8]; title = L"\text{\textbf{AI Uncertainty}}")
+    else
+        ax = Axis(fig[i, 8];)
+    end
+
     hidedecorations!(ax)
     hm = heatmap!(ax, lons, lats, sample_tuples[cg_ind].std_samples_2[:, :, t] .* σ[t] , colormap = :viridis, colorrange = ((0, 1/4) .* σ[t]))
-    ax = Axis(fig[i, 10]; title =  L"\text{\textbf{Data Standard Deviation}}")
-    hm = heatmap!(ax, lons, lats, sample_tuples[cg_ind].std_samples_2[:, :, t] .* σ[t] , colormap = :viridis, colorrange = ((0, 1/4) .* σ[t]))
-    ax = Axis(fig[i, 10]; title =  L"\text{\textbf{Data Standard Deviation}}")
+    if i == 1
+        ax = Axis(fig[i, 9]; title =  L"\text{\textbf{Data Std}}")
+    else
+        ax = Axis(fig[i, 9];)
+    end
     hidedecorations!(ax)
     heatmap!(ax, lons, lats, data_tuple.std_field[:, :, t] .* σ[t], colormap = :viridis, colorrange = ((0, 1/4) .* σ[t]))
-    Colorbar(fig[i, 11], hm, label = units[t], ticks=stdticks[t], labelsize=20, ticklabelsize = 20)
-end
+    Colorbar(fig[i, 10], hm, label = units[t], ticks=stdticks[t], labelsize=28, ticklabelsize=28)
+
+    return fig
 end
 
-##
+####
+#### U - velocity figure
+####
 
-t = 4
-factor = 250
-fig = Figure(size = (6*factor, factor))
+fig = Figure(size = (2400, 1200), fontsize=28)
 lats = range(15, 75, length = 128)
 lons = range(0, 60, length = 128)
-for (i, cg_ind) in enumerate([7])
-    ax = Axis(fig[i, 1]; title = L"\text{\textbf{AI Average}}")
-    heatmap!(ax, lons, lats, sample_tuples[cg_ind].averaged_samples_2[:, :, t] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
-    hidedecorations!(ax)
-    ax = Axis(fig[i, 2]; title = L"\text{\textbf{Data Mean}}")
-    hidedecorations!(ax)
-    hm = heatmap!(ax, lons, lats, data_tuple.mean_field[:, :, t] .* σ[t] .+ μ[t], colormap = colormaps[t], colorrange = cranges[t])
-    Colorbar(fig[i, 3], hm, label=units[t], ticks=meanticks[t], labelsize=20, ticklabelsize=20)
-
-    shift =1 
-    Δ =  abs.(sample_tuples[cg_ind].averaged_samples_2[:, :, t] - data_tuple.mean_field[:, :, t])
-    ax = Axis(fig[i, 3 + shift] ; title = L"\text{\textbf{Absolute Difference}}")
-    heatmap!(ax, lons, lats, Δ .* σ[t], colormap = :viridis, colorrange = (0, 1/4) .* σ[t])
-    hidedecorations!(ax)
-    ax = Axis(fig[i, 4 + shift]; title =  L"\text{\textbf{AI Uncertainty}}")
-    hidedecorations!(ax)
-    hm = heatmap!(ax, lons, lats, sample_tuples[cg_ind].std_samples_2[:, :, t] .* σ[t] , colormap = :viridis, colorrange = ((0, 1/4) .* σ[t]))
-    ax = Axis(fig[i, 5 + shift]; title =  L"\text{\textbf{Sum}}")
-    hidedecorations!(ax)
-    hm = heatmap!(ax, lons, lats, sample_tuples[cg_ind].std_samples_2[:, :, t] .* σ[t] + Δ .* σ[t], colormap = :viridis, colorrange = ((0, 1/4) .* σ[t]))
-    ax = Axis(fig[i, 6 + shift]; title =  L"\text{\textbf{Data Standard Deviation}}")
-    hidedecorations!(ax)
-    hm = heatmap!(ax, lons, lats, data_tuple.std_field[:, :, t] .* σ[t], colormap = :viridis, colorrange = ((0, 1/4) .* σ[t]))
-    Colorbar(fig[i, 7 + shift], hm, label = units[t], ticks=stdticks[t], labelsize=20, ticklabelsize = 20)
+for (i, cg_ind) in enumerate([1, 3, 5, 7])
+    context_field_prediction!(fig, i, cg_ind, 1)
 end
+save("Figures/context_field_and_prediction_velocity.png", fig)
+save("Figures/context_field_and_prediction_velocity.eps", fig)
+
+####
+#### Temperature figure
+####
+
+fig = Figure(size = (2400, 1200), fontsize=28)
+lats = range(15, 75, length = 128)
+lons = range(0, 60, length = 128)
+for (i, cg_ind) in enumerate([1, 3, 5, 7])
+    context_field_prediction!(fig, i, cg_ind, 4)
+end
+save("Figures/context_field_and_prediction_temperature.png", fig)
+save("Figures/context_field_and_prediction_temperature.eps", fig)
+
+####
+#### All fields figure
+####
+
+fig = Figure(size = (2400, 1200), fontsize=28)
+lats = range(15, 75, length = 128)
+lons = range(0, 60, length = 128)
+cg_ind = 1
+for i in [1, 2, 3, 4]
+    context_field_prediction!(fig, i, cg_ind, i)
+end
+save("Figures/context_field_and_prediction_all.png", fig)
+save("Figures/context_field_and_prediction_all.eps", fig)
+
+t = 4
+fig = Figure(size = (2400, 400), fontsize=28)
+lats = range(15, 75, length = 128)
+lons = range(0, 60, length = 128)
+cg_ind = 7
+
+ax = Axis(fig[1, 1]; title = L"\text{\textbf{AI Average}}")
+heatmap!(ax, lons, lats, sample_tuples[cg_ind].averaged_samples_2[:, :, t] .* σ[t] .+ μ[t], colormap=colormaps[t], colorrange = cranges[t])
+hidedecorations!(ax)
+ax = Axis(fig[1, 2]; title = L"\text{\textbf{Data Mean}}")
+hidedecorations!(ax)
+hm = heatmap!(ax, lons, lats, data_tuple.mean_field[:, :, t] .* σ[t] .+ μ[t], colormap = colormaps[t], colorrange = cranges[t])
+Colorbar(fig[1, 3], hm, label=units[t], ticks=meanticks[t], labelsize=28, ticklabelsize=28)
+
+shift =1 
+Δ =  abs.(sample_tuples[cg_ind].averaged_samples_2[:, :, t] - data_tuple.mean_field[:, :, t])
+ax = Axis(fig[1, 4] ; title = L"\text{\textbf{Absolute Difference}}")
+heatmap!(ax, lons, lats, Δ .* σ[t], colormap = :viridis, colorrange = (0, 1/4) .* σ[t])
+hidedecorations!(ax)
+ax = Axis(fig[1, 5]; title =  L"\text{\textbf{AI Uncertainty}}")
+hidedecorations!(ax)
+hm = heatmap!(ax, lons, lats, sample_tuples[cg_ind].std_samples_2[:, :, t] .* σ[t] , colormap = :viridis, colorrange = ((0, 1/4) .* σ[t]))
+ax = Axis(fig[1, 6]; title =  L"\text{\textbf{Sum}}")
+hidedecorations!(ax)
+hm = heatmap!(ax, lons, lats, sample_tuples[cg_ind].std_samples_2[:, :, t] .* σ[t] + Δ .* σ[t], colormap = :viridis, colorrange = ((0, 1/4) .* σ[t]))
+ax = Axis(fig[1, 7]; title =  L"\text{\textbf{Data Standard Deviation}}")
+hidedecorations!(ax)
+hm = heatmap!(ax, lons, lats, data_tuple.std_field[:, :, t] .* σ[t], colormap = :viridis, colorrange = ((0, 1/4) .* σ[t]))
+Colorbar(fig[1, 8], hm, label = units[t], ticks=stdticks[t], labelsize=28, ticklabelsize = 28)
+
 save("Figures/context_field_and_prediction_temperature_difference.png", fig)
