@@ -16,8 +16,8 @@ zlevels = []
 factors = [2^k for k in 0:7]
 normlabel = ["L1", "L2", "Linfty" ]
 fieldnames = ["U", "V", "W", "T"]
-units = ["m/s", "m/s", "m/s", "Kelvin"]
-xlabel = "Log2 Coarse-Graining"
+units = [L"\text{cm/s}", L"\text{cm/s}", L"\text{mm/s}", L"^\circ\text{C}"]
+xlabel = L"\text{Coarse-graining level}"
 
 for level_index in ProgressBar([1, 2, 3, 5, 7])
     tds = []
@@ -99,25 +99,46 @@ for level_index in ProgressBar([1, 2, 3, 5, 7])
     end
 end
 
-
-cglist = round.(Int, log2.(factors ))
+cglist = round.(Int, factors)
 colors = [:red, :blue, :green, :orange, :purple, :black]
-string_label = [string(zlevel)[2:4] * " [m]" for zlevel in zlevels]
-string_label[end] = "79 [m]"
-string_label[1] = "1355 [m]"
-units = ["m/s", "m/s", "m/s", "ᵒC"]
+string_label = [L"79 \text{ m}",
+                L"213 \text{ m}",
+                L"387 \text{ m}",
+                L"491 \text{ m}",
+                L"1355 \text{ m}"]
+
+ticks(t) = (t, [L"%$i" for i in t])
+
+myxticks = ([1, 2, 4, 8, 16, 32, 64, 128], [L"2^0", L"2^1", L"2^2", L"2^3", L"2^4", L"2^5", L"2^6", L"2^7"])
+
+yticks = (ticks([0, 0.5, 1, 1.5]), 
+          ticks([0, 1, 2]),
+          ticks([0, 2e-3, 4e-3]),
+          ticks([0, 0.25, 0.5, 0.75]))
+
+scaling = [1e-2, 1e-2, 1e-3, 1]
+
 for k in 1:3
     factor = 300
-    fig = Figure(resolution = (5 * factor, 1 * factor)) 
+    fig = Figure(resolution = (5 * factor, 1 * factor), fontsize = 18) 
     for i in 1:4
-        ax = Axis(fig[1, i]; title = "Discrepancy " * fieldnames[i], ylabel = units[i], xlabel)
+        if i == 1
+            title = L"\text{\textbf{Discrepancy U}}"
+        elseif i == 2
+            title = L"\text{\textbf{Discrepancy V}}"
+        elseif i == 3
+            title = L"\text{\textbf{Discrepancy W}}"
+        else
+            title = L"\text{\textbf{Discrepancy Ts}}"
+        end
+
+        ax = Axis(fig[1, i]; title, ylabel = units[i], xlabel, xscale=log2, xticks=xticks, yticks=yticks[i])
         for ii in eachindex(string_label)
             error_list = level_errors[ii]
             scale = scales[ii]
-            scatter!(ax, cglist, error_list[:, i, k] * scale[i], color = colors[ii])
-            lines!(ax, cglist, error_list[:, i, k] * scale[i], label = string_label[ii], color = colors[ii])
+            scatter!(ax, cglist, error_list[:, i, k] * scale[i] ./ scaling[i], color = colors[ii])
+            lines!(ax, cglist, error_list[:, i, k] * scale[i] ./ scaling[i], label = string_label[ii], color = colors[ii])
             scatter!(ax, [0, 0]; markersize = 0)
-            ax.xticks = cglist
         end
         if i == 2
             axislegend(ax, position = :lt)
@@ -127,11 +148,21 @@ for k in 1:3
     save("Figures/prediction_error_at_various_levels_norm_" *  normlabel[k] * ".png", fig)
 end
 
-
+2
 k = 2
 fig = Figure(resolution = (2250, 450), fontsize = 30) 
 for i in 1:4
-    ax = Axis(fig[1, i]; title = "Discrepancy " * fieldnames[i], ylabel = units[i], xlabel)
+    if i == 1
+        title = L"\text{\textbf{Discrepancy U}}"
+    elseif i == 2
+        title = L"\text{\textbf{Discrepancy V}}"
+    elseif i == 3
+        title = L"\text{\textbf{Discrepancy W}}"
+    else
+        title = L"\text{\textbf{Discrepancy Ts}}"
+    end
+
+    ax = Axis(fig[1, i]; title, ylabel = units[i], xlabel)
     for ii in eachindex(string_label)
         error_list = level_errors[ii]
         scale = scales[ii]

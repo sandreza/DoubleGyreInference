@@ -13,6 +13,7 @@ import Base
 @show "This is the file"
 
 Base.:(+)(s::Spectrum, t::Spectrum) = Spectrum(s.spec .+ t.spec, s.freq)
+Base.:(-)(s::Spectrum, t::Spectrum) = Spectrum(s.spec .- t.spec, s.freq)
 Base.:(*)(s::Spectrum, t::Spectrum) = Spectrum(s.spec .* t.spec, s.freq)
 Base.:(/)(s::Spectrum, t::Number)   = Spectrum(s.spec ./ t, s.freq)
 
@@ -69,10 +70,12 @@ vlevels_samples = zeros(128, 128, length(files), 100)
 Tlevels_samples = zeros(128, 128, length(files), 100)
 zlevels = zeros(length(files))
 
+sample_index = 3847
+
 levels = 1:7
 for (i, level) in enumerate(levels)
     sample_tuple = return_samples_file(level, factor; complement=false)
-    data_tuple = return_data_file(level; complement=false, sample_index_1=3501:3600)
+    data_tuple = return_data_file(level; complement=false, sample_index_1=3847-100+1:3847)
 
     μ, σ = return_scale(data_tuple)
     field = data_tuple.field_1
@@ -101,7 +104,7 @@ for (i, level) in enumerate(levels_complement)
     ii = i + length(levels)
 
     sample_tuple = return_samples_file(level, factor; complement = true)
-    data_tuple = return_data_file(level; complement = true, sample_index_1=3501:3600)
+    data_tuple = return_data_file(level; complement = true, sample_index_1=3847-100+1:3847)
 
     μ, σ = return_scale(data_tuple)
     field = data_tuple.field_1
@@ -145,24 +148,66 @@ function average_spectra(j, k, udata, vdata, dx)
     return uspec + vspec
 end
 
-kdata1 = average_spectra(10,  15, sorted_ulevels_data, sorted_vlevels_data, dx)
-kdata2 = average_spectra(64,  15, sorted_ulevels_data, sorted_vlevels_data, dx)
-kdata3 = average_spectra(120, 15, sorted_ulevels_data, sorted_vlevels_data, dx)
+function kinetic_spectra(j, k, t, udata, vdata, dx)
+    uspec  = real(power_spectrum_1d_x(udata[:, j, k, t], dx[j]))
+    vspec  = real(power_spectrum_1d_x(vdata[:, j, k, t], dx[j]))
 
-ksamples1 = average_spectra(10,  15, sorted_ulevels_samples, sorted_vlevels_samples, dx)
-ksamples2 = average_spectra(64,  15, sorted_ulevels_samples, sorted_vlevels_samples, dx)
-ksamples3 = average_spectra(120, 15, sorted_ulevels_samples, sorted_vlevels_samples, dx)
+    return uspec + vspec
+end
+
+kspec1 = Spectrum[kinetic_spectra(10,  15, t, sorted_ulevels_samples, sorted_vlevels_samples, dx) for t in 1:100]
+kspec2 = Spectrum[kinetic_spectra(64,  15, t, sorted_ulevels_samples, sorted_vlevels_samples, dx) for t in 1:100]
+kspec3 = Spectrum[kinetic_spectra(120, 15, t, sorted_ulevels_samples, sorted_vlevels_samples, dx) for t in 1:100]
+
+kdata1 = kinetic_spectra(10,  15, 100, sorted_ulevels_data, sorted_vlevels_data, dx)
+kdata2 = kinetic_spectra(64,  15, 100, sorted_ulevels_data, sorted_vlevels_data, dx)
+kdata3 = kinetic_spectra(120, 15, 100, sorted_ulevels_data, sorted_vlevels_data, dx)
+
+kmean1 = mean(kspec1)
+kmean2 = mean(kspec2)
+kmean3 = mean(kspec3)
+
+kfull1 = zeros(length(kmean1.spec), 100)
+kfull2 = zeros(length(kmean2.spec), 100)
+kfull3 = zeros(length(kmean3.spec), 100)
+
+for j in 1:100
+    kfull1[:, j] .= kspec1[j].spec
+    kfull2[:, j] .= kspec2[j].spec
+    kfull3[:, j] .= kspec3[j].spec
+end
+
+kq11 = deepcopy(kmean1)
+kq12 = deepcopy(kmean2)
+kq13 = deepcopy(kmean3)
+
+kq21 = deepcopy(kmean1)
+kq22 = deepcopy(kmean2)
+kq23 = deepcopy(kmean3)
+
+kq11.spec .= [quantile(kfull1[i, :], 0.01) for i in 1:length(kmean1.spec)]
+kq12.spec .= [quantile(kfull2[i, :], 0.01) for i in 1:length(kmean2.spec)]
+kq13.spec .= [quantile(kfull3[i, :], 0.01) for i in 1:length(kmean3.spec)]
+
+kq21.spec .= [quantile(kfull1[i, :], 0.99) for i in 1:length(kmean1.spec)]
+kq22.spec .= [quantile(kfull2[i, :], 0.99) for i in 1:length(kmean2.spec)]
+kq23.spec .= [quantile(kfull3[i, :], 0.99) for i in 1:length(kmean3.spec)]
 
 fig = Figure()
 ax = Axis(fig[1, 1]; yscale = log10, xscale = log10, xlabel = "wavenumber", ylabel = "PSD")
 
-lines!(ax, kdata1.freq, kdata1.spec;       color = :red, linewidth = 2, linestyle = :dash, label="South data")
-lines!(ax, ksamples1.freq, ksamples1.spec; color = :red, linewidth = 2, label="South samples")
+lines!(ax, kdata1.freq, kdata1.spec;             color = :red, linewidth = 2, linestyle = :dash, label="South data")
+lines!(ax, ksamples1.freq, ksamples1.spec;       color = :red, linewidth = 2, label="South samples")
+ band!(ax, ksamples1.freq, kq11.spec, kq21.spec; color = (:red, 0.5))
 
-lines!(ax, kdata2.freq, kdata2.spec;       color = :blue, linewidth = 2, linestyle = :dash, label = "Equator data")
-lines!(ax, ksamples2.freq, ksamples2.spec; color = :blue, linewidth = 2, label="Equator samples")
+lines!(ax, kdata2.freq, kdata2.spec;             color = :blue, linewidth = 2, linestyle = :dash, label = "Equator data")
+lines!(ax, ksamples2.freq, ksamples2.spec;       color = :blue, linewidth = 2, label="Equator samples")
+ band!(ax, ksamples2.freq, kq12.spec, kq22.spec; color = (:blue, 0.5))
 
-lines!(ax, kdata3.freq, kdata3.spec;       color = :green, linewidth = 2, linestyle = :dash, label="North data")
-lines!(ax, ksamples3.freq, ksamples3.spec; color = :green, linewidth = 2, label="North samples")
+lines!(ax, kdata3.freq, kdata3.spec;             color = :green, linewidth = 2, linestyle = :dash, label="North data")
+lines!(ax, ksamples3.freq, ksamples3.spec;       color = :green, linewidth = 2, label="North samples")
+ band!(ax, ksamples3.freq, kq13.spec, kq23.spec; color = (:green, 0.5))
 
 axislegend(ax, position=:lb)
+
+save("Figures/kinetic_energy_spectra.png", fig)

@@ -62,7 +62,7 @@ levels = [3, collect(9:14)...] # with respect to the original indices
 # end
 # save("Figures/convergence_with_depth.png", fig)
 
-fig = Figure(resolution = (1000, 750))
+fig = Figure(resolution = (1000, 750), fontsize=20)
 state_index = 1
 ylabels = [L"\text{U ms}^{-1}", L"\text{V ms}^{-1}", L"\text{W ms}^{-1}", L"\text{T }^\circ\text{C}"]
 end_index = (size(averages, 1) - N2 ) ÷ 2 + N2
@@ -73,11 +73,11 @@ for (i, level) in enumerate(chosen_levels)
     for state_index in eachindex(1:4)
         depth_string = @sprintf("%0.f", abs(zlevels[level]))
         if state_index == 1
-            if level == 1 
+            if length(chosen_levels) + 1 - i == 1
                 title = L"\text{\textbf{Depth = 79 m}}"
-            elseif level == 2
+            elseif length(chosen_levels) + 1 - i == 2
                 title = L"\text{\textbf{Depth = 213 m}}"
-            elseif level == 3
+            elseif length(chosen_levels) + 1 - i == 3
                 title = L"\text{\textbf{Depth = 388 m}}"
             else
                 title = L"\text{\textbf{Depth = 1355 m}}"
