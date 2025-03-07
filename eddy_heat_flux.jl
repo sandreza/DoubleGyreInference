@@ -10,15 +10,15 @@ heat_capacity = 3997
 
 ticks(t) = (t, [L"%$i" for i in t])
 
-xticksV = (ticks([-200, -100, 0, 100, 200]), 
-           ticks([-350, -250, -150, -50, 50]), 
-           ticks([-150, -100, -50, 0, 50]),
-           ticks([-50, 0, 50]))
+xticksV = (ticks([-20, -10, 0, 10, 20]), 
+           ticks([-50, -25, 0, 25]), 
+           ticks([-20, -10, 0, 10]),
+           ticks([-10, -5,  0]))
 
-xticksH = (ticks([-0.25, 0, 0.25, 0.5, 0.75]), 
-           ticks([-0.75, -0.5, -0.25, 0, 0.25]), 
-           ticks([-0.2, -0.1, 0, 0.1]),
-           ticks([-0.02, -0.01, 0, 0.01, 0.02]))
+xticksH = (ticks([0, 0.1, 0.2, 0.3]), 
+           ticks([-0.1, -0.05, 0, 0.05]), 
+           ticks([-0.02, -0.01, 0, 0.01]),
+           ticks([0, 0.001, 0.002]))
 
 qu = 0.99
 op = 0.4
@@ -66,13 +66,13 @@ for XLast in [32, 128]
         if i == 1
             ax = Axis(fig[1, i];  ylabel = L"\text{Latitude [}^\circ\text{]}", 
                                   xlabel = L"\text{Vertical heat flux [Wm}^{-2}\text{]}", 
-                                  yticks = ticks([20, 40, 60]))
-                                  # xticks = xticksV[i])
+                                  yticks = ticks([20, 40, 60]),
+                                  xticks = xticksV[i])
         else
             ax = Axis(fig[1, i];  ylabel = "", 
                                   xlabel = L"\text{Vertical heat flux [Wm}^{-2}\text{]}", 
-                                  yticks = ([20, 40, 60], ["", "", ""]))
-                                  # xticks = xticksV[i])
+                                  yticks = ([20, 40, 60], ["", "", ""]),
+                                  xticks = xticksV[i])
         end
 
         lines!(ax, zonal_average,              latitude; color = (:blue, op), label = L"\text{Ground Truth}", linewidth=2)
@@ -123,7 +123,6 @@ for XLast in [32, 128]
     save("Figures/zonal_average_heat_flux_all_depths_$(XLast).eps", fig)
 end
 
-##
 
 factors = [1, 4, 16, 64]
 for XLast in [32, 128]
