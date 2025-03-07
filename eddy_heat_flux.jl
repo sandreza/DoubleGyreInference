@@ -102,13 +102,13 @@ for XLast in [32, 128]
         if i == 1
             ax = Axis(fig[2, i];  ylabel = L"\text{Latitude [}^\circ\text{]}", 
                                   xlabel = L"\text{Meridional heat flux [MWm}^{-2}\text{]}", 
-                                  yticks = ticks([20, 40, 60]))
-                                  # xticks = xticksH[i])
+                                  yticks = ticks([20, 40, 60]),
+                                  xticks = xticksH[i])
         else
             ax = Axis(fig[2, i];  ylabel = "", 
                                   xlabel = L"\text{Meridional heat flux [MWm}^{-2}\text{]}", 
-                                  yticks = ([20, 40, 60], ["", "", ""]))
-                                  # xticks = xticksH[i])
+                                  yticks = ([20, 40, 60], ["", "", ""]),
+                                  xticks = xticksH[i])
         end
 
         lines!(ax, zonal_average ./ 1e6,              latitude; color = (:blue, op), linewidth=2)
@@ -167,13 +167,13 @@ for XLast in [32, 128]
         if i == 1
             ax = Axis(fig[1, i];  ylabel = L"\text{Latitude [}^\circ\text{]}", 
                                   xlabel = L"\text{Vertical heat flux [Wm}^{-2}\text{]}", 
-                                  yticks = ticks([20, 40, 60]))
-                                  # xticks = xticksV[i])
+                                  yticks = ticks([20, 40, 60]),
+                                  xticks = xticksV[i])
         else
             ax = Axis(fig[1, i];  ylabel = "", 
                                   xlabel = L"\text{Vertical heat flux [Wm}^{-2}\text{]}", 
-                                  yticks = ([20, 40, 60], ["", "", ""]))
-                                  # xticks = xticksV[i])
+                                  yticks = ([20, 40, 60], ["", "", ""]),
+                                  xticks = xticksV[i])
         end
 
         lines!(ax, zonal_average,              latitude; color = (:blue, op), label = L"\text{Ground Truth}", linewidth=2)
@@ -203,13 +203,13 @@ for XLast in [32, 128]
         if i == 1
             ax = Axis(fig[2, i];  ylabel = L"\text{Latitude [}^\circ\text{]}", 
                                   xlabel = L"\text{Meridional heat flux [MWm}^{-2}\text{]}", 
-                                  yticks = ticks([20, 40, 60]))
-                                  # xticks = xticksH[i])
+                                  yticks = ticks([20, 40, 60]),
+                                  xticks = xticksH[i])
         else
             ax = Axis(fig[2, i];  ylabel = "", 
                                   xlabel = L"\text{Meridional heat flux [MWm}^{-2}\text{]}", 
-                                  yticks = ([20, 40, 60], ["", "", ""]))
-                                  # xticks = xticksH[i])
+                                  yticks = ([20, 40, 60], ["", "", ""]),
+                                  xticks = xticksH[i])
         end
 
         lines!(ax, zonal_average ./ 1e6,              latitude; color = (:blue, op), linewidth=2)
