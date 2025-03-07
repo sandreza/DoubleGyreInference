@@ -61,14 +61,12 @@ dy = read(hfile["dy"])
 dz = read(hfile["dz"])
 close(hfile)
 
-
 permuted_indices = sortperm(zlevels)
 sorted_zlevels = zlevels[permuted_indices]
 sorted_vlevels_data = vlevels_data[:, :, permuted_indices]
 sorted_Tlevel_data = Tlevel_data[:, :, permuted_indices]
 sorted_vlevels_samples = vlevels_samples[:, :, permuted_indices, :]
 sorted_Tlevels_samples = Tlevels_samples[:, :, permuted_indices, :]
-
 
 rad_to_deg = π / 180
 dλ = 60 / 128 * rad_to_deg
