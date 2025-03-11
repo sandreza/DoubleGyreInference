@@ -6,6 +6,9 @@ export return_samples_file
 export return_data_file
 export return_scale
 
+# jax version 
+export jax_grab_scaling, jax_field, jax_context
+
 const free_surface_color = :diverging_protanopic_deuteranopic_bwy_60_95_c32_n256
 const temperature_color = :thermometer
 const velocity_color = :balance
@@ -114,6 +117,58 @@ function return_scale(data_tuple)
     std_scale[3] = data_tuple.w_2std
     std_scale[4] = data_tuple.b_2std
     return mean_scale, std_scale
+end
+
+
+function jax_grab_scaling(state_index)
+    data_file = "full_level_training_data.hdf5"
+    data_directory = "/orcd/data/raffaele/001/sandre/DoubleGyreTrainingData/"
+    hfile = h5open(data_directory * data_file, "r")
+    mu = read(hfile["mus"])[state_index+1]
+    std = read(hfile["stds"])[state_index+1]
+    close(hfile)
+    return (; mu, std)
+end
+
+function jax_field(level::Int, field_index::Int, future_year::Int; data_directory = "/orcd/data/raffaele/001/sandre/DoubleGyreTrainingData/", file_string = file_string = "production_jax_samples_")
+    state_index = field_index + (level-1) * 4
+    # file_string = "regular_production_jax_samples_"
+    # file_string = "production_jax_samples_"
+    hfile = h5open(data_directory * file_string * "$(future_year)_field_$(state_index).hdf5", "r")
+    ground_truth = read(hfile["ground_truth"])
+    samples = read(hfile["samples"])
+    close(hfile)
+    scaling = jax_grab_scaling(state_index)
+    mu = scaling.mu 
+    sigma = scaling.std
+    return (; ground_truth, samples, mu, sigma)
+end
+
+function jax_context(future_year::Int; data_directory = "/orcd/data/raffaele/001/sandre/DoubleGyreTrainingData/", file_string = "production_jax_samples_")
+    # file_string = "regular_production_jax_samples_"
+    # file_string = "production_jax_samples_"
+    hfile = h5open(data_directory * file_string * "$(future_year)_field_0.hdf5", "r")
+    context = read(hfile["context"])
+    close(hfile)
+    (; mu, std) = jax_grab_scaling(60)
+    sigma = std
+    return (; context, mu, sigma)
+end
+
+function jax_symbol_to_index(field_symbol::Symbol)
+    if field_symbol == :u 
+        return 0
+    elseif field_symbol == :v 
+        return 1 
+    elseif field_symbol == :w 
+        return 2 
+    else 
+        return 3 
+    end
+end
+
+function jax_field(level, field_symbol::Symbol, future_year; data_directory = "/orcd/data/raffaele/001/sandre/DoubleGyreTrainingData/", file_string = "production_jax_samples_")
+    jax_field(level, jax_symbol_to_index(field_symbol), future_year; data_directory, file_string) 
 end
 
 end # module DoubleGyreInference
