@@ -10,7 +10,14 @@ sorted_Tlevels_data  = zeros(128, 128, total_levels)
 sorted_Tlevels_samples = zeros(128, 128, total_levels, nsamples)
 sorted_vlevels_samples = zeros(128, 128, total_levels, nsamples)
 
-file_string = "velocity_uc_production_jax_samples_"
+
+future_year = 50
+
+file_string = "attention_velocity_uc_production_jax_samples_"
+# file_string = "large_residual_uc_production_jax_samples_"
+# file_string = "attention_velocity_uc_production_jax_samples_"
+# file_string = "residual_uc_production_jax_samples_"
+# file_string = "velocity_uc_production_jax_samples_"
 # file_string = "regular_uc_production_jax_samples_"
 # file_string = "velocity_production_jax_samples_"
 # file_string = "regular_production_jax_samples_"
@@ -27,7 +34,7 @@ dy = read(hfile["dy"])
 dz = read(hfile["dz"])
 close(hfile)
 
-future_year = 50
+
 for level in ProgressBar(1:15)
     (; ground_truth, samples, mu, sigma) = jax_field(level, :b, future_year; file_string)
     sorted_Tlevels_data[:, :, level] .= (ground_truth .* sigma .+ mu) /(α * g)

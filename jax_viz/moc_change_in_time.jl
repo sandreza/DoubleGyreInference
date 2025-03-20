@@ -13,9 +13,12 @@ sorted_blevels_data  = zeros(128, 128, total_levels)
 sorted_blevels_samples = zeros(128, 128, total_levels, nsamples)
 sorted_vlevels_samples = zeros(128, 128, total_levels, nsamples)
 
-file_string = "regular_uc_production_jax_samples_"
-file_string = "regular_production_jax_samples_"
-file_string = "production_jax_samples_"
+file_string = "attention_velocity_uc_production_jax_samples_"
+# file_string = "old_velocity_uc_production_jax_samples_"
+# file_string = "velocity_uc_production_jax_samples_"
+# file_string = "regular_uc_production_jax_samples_"
+# file_string = "regular_production_jax_samples_"
+# file_string = "production_jax_samples_"
 
 σ = 1.3
 z_faces(k) = -Lz * (1 - tanh(σ * (k - 1) / Nz) / tanh(σ));
