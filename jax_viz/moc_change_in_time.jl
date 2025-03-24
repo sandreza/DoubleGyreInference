@@ -13,6 +13,7 @@ sorted_blevels_data  = zeros(128, 128, total_levels)
 sorted_blevels_samples = zeros(128, 128, total_levels, nsamples)
 sorted_vlevels_samples = zeros(128, 128, total_levels, nsamples)
 
+cg = 0
 file_string = "attention_velocity_uc_production_jax_samples_"
 # file_string = "old_velocity_uc_production_jax_samples_"
 # file_string = "velocity_uc_production_jax_samples_"
@@ -59,8 +60,16 @@ end
 
     bmax = maximum(b[i, j, :])
     bmin = minimum(b[i, j, :])
+    for blev in 1:Nb
+        # if blevels[blev] ≤ bmax
+            for k in 1:Nz
+                ψint[i, j, blev] += v[i, j, k] * dx[i] * dz[k] * (b[i, j, k] ≤ blevels[blev] )
+            end
+        # end
+    end
+    #=
     for k in 1:Nz
-        if b[i, j, k] < blevels[end]
+        if b[i, j, k] ≤ blevels[end]
             blev = searchsortedfirst(blevels, b[i, j, k])
             if bmin ≤ blevels[blev] ≤ bmax 
                 ψ[i, j, blev] += v[i, j, k] * dx[i] * dz[k]
@@ -75,6 +84,7 @@ end
             ψint[i, j, blev] = ψint[i, j, blev-1] + ψ[i, j, blev]
         end
     end
+    =#
 
 end
 
@@ -91,10 +101,10 @@ for future_year in 1:25
     sorted_blevels_samples .= Float32(0.0)
     sorted_vlevels_samples .= Float32(0.0)
     for level in ProgressBar(1:15)
-        (; ground_truth, samples, mu, sigma) = jax_field(level, :b, future_year; file_string = file_string)
+        (; ground_truth, samples, mu, sigma) = jax_field(level, :b, future_year; file_string = file_string, cg)
         sorted_blevels_data[:, :, level] .+= (ground_truth .* sigma .+ mu) / 25 
         sorted_blevels_samples[:, :, level, :] .+= (samples .* sigma .+ mu) / 25 
-        (; ground_truth, samples, mu, sigma) = jax_field(level, :v, future_year; file_string = file_string)
+        (; ground_truth, samples, mu, sigma) = jax_field(level, :v, future_year; file_string = file_string, cg)
         sorted_vlevels_data[:, :, level] .+= (ground_truth .* sigma .+ mu)  / 25
         sorted_vlevels_samples[:, :, level, :] .+= (samples .* sigma .+ mu)  / 25
     end
@@ -124,10 +134,10 @@ for future_year in 26:50
     sorted_blevels_samples .= Float32(0.0)
     sorted_vlevels_samples .= Float32(0.0)
     for level in ProgressBar(1:15)
-        (; ground_truth, samples, mu, sigma) = jax_field(level, :b, future_year)
+        (; ground_truth, samples, mu, sigma) = jax_field(level, :b, future_year; file_string = file_string, cg)
         sorted_blevels_data[:, :, level] .+= (ground_truth .* sigma .+ mu) / 25 
         sorted_blevels_samples[:, :, level, :] .+= (samples .* sigma .+ mu) / 25 
-        (; ground_truth, samples, mu, sigma) = jax_field(level, :v, future_year)
+        (; ground_truth, samples, mu, sigma) = jax_field(level, :v, future_year; file_string = file_string, cg)
         sorted_vlevels_data[:, :, level] .+= (ground_truth .* sigma .+ mu)  / 25
         sorted_vlevels_samples[:, :, level, :] .+= (samples .* sigma .+ mu)  / 25
     end

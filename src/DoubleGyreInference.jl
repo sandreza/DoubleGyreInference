@@ -130,11 +130,14 @@ function jax_grab_scaling(state_index)
     return (; mu, std)
 end
 
-function jax_field(level::Int, field_index::Int, future_year::Int; data_directory = "/orcd/data/raffaele/001/sandre/DoubleGyreTrainingData/", file_string = file_string = "production_jax_samples_")
+function jax_field(level::Int, field_index::Int, future_year::Int; data_directory = "/orcd/data/raffaele/001/sandre/DoubleGyreTrainingData/", file_string = "production_jax_samples_", cg = -1)
     state_index = field_index + (level-1) * 4
-    # file_string = "regular_production_jax_samples_"
-    # file_string = "production_jax_samples_"
-    hfile = h5open(data_directory * file_string * "$(future_year)_field_$(state_index).hdf5", "r")
+    if cg < 0
+        total_string = data_directory * file_string * "$(future_year)_field_$(state_index).hdf5"
+    else
+        total_string = data_directory * file_string * "$(future_year)_field_$(state_index)_cg_$(cg).hdf5"
+    end
+    hfile = h5open(total_string, "r")
     ground_truth = read(hfile["ground_truth"])
     samples = read(hfile["samples"])
     close(hfile)
@@ -144,10 +147,13 @@ function jax_field(level::Int, field_index::Int, future_year::Int; data_director
     return (; ground_truth, samples, mu, sigma)
 end
 
-function jax_context(future_year::Int; data_directory = "/orcd/data/raffaele/001/sandre/DoubleGyreTrainingData/", file_string = "production_jax_samples_")
-    # file_string = "regular_production_jax_samples_"
-    # file_string = "production_jax_samples_"
-    hfile = h5open(data_directory * file_string * "$(future_year)_field_0.hdf5", "r")
+function jax_context(future_year::Int; data_directory = "/orcd/data/raffaele/001/sandre/DoubleGyreTrainingData/", file_string = "production_jax_samples_", cg = -1)
+    if cg < 0
+        total_string = data_directory * file_string * "$(future_year)_field_0.hdf5"
+    else
+        total_string = data_directory * file_string * "$(future_year)_field_0_cg_$(cg).hdf5"
+    end
+    hfile = h5open(toal_string , "r")
     context = read(hfile["context"])
     close(hfile)
     (; mu, std) = jax_grab_scaling(60)
@@ -167,8 +173,8 @@ function jax_symbol_to_index(field_symbol::Symbol)
     end
 end
 
-function jax_field(level, field_symbol::Symbol, future_year; data_directory = "/orcd/data/raffaele/001/sandre/DoubleGyreTrainingData/", file_string = "production_jax_samples_")
-    jax_field(level, jax_symbol_to_index(field_symbol), future_year; data_directory, file_string) 
+function jax_field(level, field_symbol::Symbol, future_year; data_directory = "/orcd/data/raffaele/001/sandre/DoubleGyreTrainingData/", file_string = "production_jax_samples_", cg = false)
+    jax_field(level, jax_symbol_to_index(field_symbol), future_year; data_directory, file_string, cg) 
 end
 
 end # module DoubleGyreInference
