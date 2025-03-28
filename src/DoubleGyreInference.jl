@@ -153,7 +153,7 @@ function jax_context(future_year::Int; data_directory = "/orcd/data/raffaele/001
     else
         total_string = data_directory * file_string * "$(future_year)_field_0_cg_$(cg).hdf5"
     end
-    hfile = h5open(toal_string , "r")
+    hfile = h5open(total_string , "r")
     context = read(hfile["context"])
     close(hfile)
     (; mu, std) = jax_grab_scaling(60)
