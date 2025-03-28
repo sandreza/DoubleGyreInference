@@ -74,7 +74,7 @@ for i in ProgressBar(1:4)
     push!(sample_shuffle_correlations, field_correlation_data(fields_samples[i][:, :, :, :], fields_samples[i][:, :, :, perm], flatten = false))
 end
 ##
-colors = [:blue, :orange, :green, :red]
+colors = [:blue, :orange, :green, :brown]
 label_names = ["u", "v", "w", "T"]
 qus = [0.6, 0.7, 0.8, 0.9]
 op = 0.5
@@ -166,7 +166,7 @@ for i in ProgressBar(1:4)
 end
 ##
 
-colors = [:blue, :orange, :green, :red]
+colors = [:blue, :orange, :green, :brown]
 label_names = ["u", "v", "w", "T"]
 qus = [0.6, 0.7, 0.8, 0.9]
 op = 0.5

@@ -1,4 +1,5 @@
 using DoubleGyreInference, Statistics, ProgressBars, LinearAlgebra, CairoMakie, Printf, HDF5, Random
+using LaTeXStrings
 α = 2e-4
 g = 9.81
 
@@ -65,7 +66,8 @@ shuffle_error_u = zeros(total_levels, cg_levels, 100)
 shuffle_error_v = zeros(total_levels, cg_levels, 100)
 shuffle_error_w = zeros(total_levels, cg_levels, 100)
 shuffle_error_T = zeros(total_levels, cg_levels, 100)
-scales = [1e-2, 1e-2, 1e-3, 1]
+scales = [1e-2, 1e-2, 1e-6, 1]
+perm = circshift(1:100, 1)
 for cg in 0:(cg_levels-1)
     for level in 1:total_levels
         ground_truth_error_u[level, cg + 1, :] = mean(abs.( sorted_ulevels_samples[:, :, level, :, cg + 1] .- reshape(sorted_ulevels_data[:, :, level], (128, 128, 1))), dims = (1, 2) )[:] / scales[1]
@@ -80,5 +82,81 @@ for cg in 0:(cg_levels-1)
     end
 end
 
+##
+colors = [:blue, :orange, :green, :brown]
+vals = zlevels[level_indices]
+# hard code it this is a potential source of error
+label_names = [L"79 \text{ m}",
+L"213 \text{ m}",
+L"387 \text{ m}",
+L"1355 \text{ m}"]
 
-tmpu = mean(ground_truth_error_u, dims = 3)
+ticks(t) = (t, [L"%$i" for i in t])
+
+cgs = collect(1:cg_levels)
+xticks = (cgs, [L"2^0", L"2^1", L"2^2", L"2^3", L"2^4", L"2^5", L"2^6", L"2^7"])
+
+ylims = [(0, 3), (0, 4), (0, 11), (0, 1.5) ]
+ylimfactor = [2, 2, 1, 4]
+yticks_p = [range(ylims[i]..., length = ceil(Int, ylimfactor[i]*ylims[i][end] + 1))[2:end-1] for i in eachindex(ylims)]
+yticks = (ticks(yticks_p[1]), 
+          ticks(yticks_p[2]),
+          ticks(yticks_p[3]),
+          ticks(yticks_p[4]))
+
+qus = [0.6, 0.7, 0.8, 0.9]
+op = 0.5
+op2 = 0.1
+
+normlabel = ["L1", "L2", "Linfty" ]
+fieldnames = ["U", "V", "W", "T"]
+units = [L"\text{cm/s}", L"\text{cm/s}", L"\mu\text{m/s}", L"^\circ\text{C}"]
+xlabel = L"\text{Coarse-graining level}"
+
+title_strings_1 = [L"\text{\textbf{OsC AI Discrepancy U}}",
+                   L"\text{\textbf{OsC AI Discrepancy V}}",
+                   L"\text{\textbf{OsC AI Discrepancy W}}",
+                   L"\text{\textbf{OsC AI Discrepancy T}}"]
+title_strings_2 = [L"\text{\textbf{AI Shuffle Discrepancy U}}",
+                   L"\text{\textbf{AI Shuffle Discrepancy V}}",
+                   L"\text{\textbf{AI Shuffle Discrepancy W}}",
+                   L"\text{\textbf{AI Shuffle Discrepancy T}}"]
+
+fields1 = [ground_truth_error_u, ground_truth_error_v, ground_truth_error_w, ground_truth_error_T]
+fields2 = [shuffle_error_u, shuffle_error_v, shuffle_error_w, shuffle_error_T]
+##
+factor = 500
+fig = Figure(resolution = (2 * factor, factor))
+for ii in 1:4
+ax = Axis(fig[1, ii]; title = title_strings_1[ii], xticks=xticks, yticks=yticks[ii], ylabel = units[ii], xlabel  = xlabel)
+state = fields1[ii]
+for level in 1:total_levels
+    field = state[level, :, :]
+    for qu in qus
+        qu_lower = [quantile(field[j, :], 1-qu) for j in 1:cg_levels]
+        qu_uppper = [quantile(field[j, :], qu) for j in 1:cg_levels]
+        band!(ax, Point.(cgs, qu_lower), Point.(cgs, qu_uppper); color = (colors[level], op2))
+    end
+    meanvals = mean(field, dims = 2)[:]
+    scatterlines!(ax, cgs, meanvals, color = (colors[level], op), label = label_names[level], marker = :xcross)
+end
+if ii == 4
+    axislegend(ax, position = :lt)
+end
+ylims!(ax, ylims[ii]...)
+ax = Axis(fig[2, ii]; title = title_strings_2[ii], xticks=xticks, yticks=yticks[ii],  ylabel = units[ii], xlabel  = xlabel)
+state = fields2[ii]
+for level in 1:total_levels
+    field = state[level, :, :]
+    for qu in qus
+        qu_lower = [quantile(field[j, :], 1-qu) for j in 1:cg_levels]
+        qu_uppper = [quantile(field[j, :], qu) for j in 1:cg_levels]
+        band!(ax, Point.(cgs, qu_lower), Point.(cgs, qu_uppper); color = (colors[level], op2))
+    end
+    meanvals = mean(field, dims = 2)[:]
+    scatterlines!(ax, cgs, meanvals, color = (colors[level], op), label = label_names[level], marker = :xcross)
+end
+ylims!(ax, ylims[ii]...)
+end
+
+save("Figures/osc_ai_discrepancy.png", fig)
