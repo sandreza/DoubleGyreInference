@@ -66,7 +66,7 @@ qu = 0.9
 fig = Figure(resolution = (400, 300))
 ax = Axis(fig[1, 1]; title = "Zonal and Vertically Integrated Meridional Heat Flux",  ylabel = "Latitude [ᵒ]", xlabel = "Heat Flux [PW]")
 latitude = range(15, 75, length = 128)
-lines!(ax, vT_data[:], latitude; color = (:blue, 0.3), label = "Oceananigans")
+lines!(ax, vT_data[:], latitude; color = (:blue, 0.3), label = "OcS")
 scatter!(ax, vT_data[:], latitude; color = (:blue, 0.3), markersize = 1)
 scatter!(ax, ensemble_mean_vT_samples, latitude; color = (:red, 0.3), markersize = 1)
 lines!(ax, ensemble_mean_vT_samples, latitude; color = (:red, 0.3), label = "AI")
@@ -83,7 +83,7 @@ qu = 0.6
 fig = Figure(resolution = (400, 300))
 ax = Axis(fig[1, 1]; title = "Zonal and Vertically Integrated Meridional Heat Flux",  ylabel = "Latitude [ᵒ]", xlabel = "Heat Flux [PW]")
 latitude = range(15, 75, length = 128)
-lines!(ax, vT_data[:], latitude; color = (:blue, 0.3), label = "Oceananigans")
+lines!(ax, vT_data[:], latitude; color = (:blue, 0.3), label = "OcS")
 scatter!(ax, vT_data[:], latitude; color = (:blue, 0.3), markersize = 1)
 scatter!(ax, ensemble_mean_vT_samples, latitude; color = (:red, 0.3), markersize = 1)
 lines!(ax, ensemble_mean_vT_samples, latitude; color = (:red, 0.3), label = "AI")
@@ -105,7 +105,7 @@ for qu in [0.6, 0.7, 0.8, 0.9]
     δupper = [quantile(vT_samples[1, i, 1, :], qu) for i in 1:Nlat]
     band!(ax, Point.(δlower, latitude), Point.(δupper, latitude); color = (:red, 0.2))
 end
-lines!(ax, vT_data[:], latitude; color = (:blue, 0.5), label = "Oceananigans")
+lines!(ax, vT_data[:], latitude; color = (:blue, 0.5), label = "OcS")
 scatter!(ax, vT_data[:], latitude; color = (:blue, 0.5), markersize = 1)
 scatter!(ax, ensemble_mean_vT_samples, latitude; color = (:red, 0.5), markersize = 1)
 lines!(ax, ensemble_mean_vT_samples, latitude; color = (:red, 0.5), label = "AI")
@@ -123,7 +123,7 @@ for qu in [0.6, 0.7, 0.8, 0.9]
     δupper = [quantile(vT_samples[1, i, 1, :], qu) for i in 1:Nlat]
     band!(ax, Point.(δlower, latitude), Point.(δupper, latitude); color = (:red, 0.2))
 end
-lines!(ax, vT_data[:], latitude; color = (:blue, 0.5), label = "Oceananigans")
+lines!(ax, vT_data[:], latitude; color = (:blue, 0.5), label = "OcS")
 scatter!(ax, vT_data[:], latitude; color = (:blue, 0.5), markersize = 1)
 scatter!(ax, ensemble_mean_vT_samples, latitude; color = (:red, 0.5), markersize = 1)
 lines!(ax, ensemble_mean_vT_samples, latitude; color = (:red, 0.5), label = "AI")
@@ -143,7 +143,7 @@ fig = Figure( resolution = (400, 300))
 # Zonal and Vertically Integrated Meridional Heat Flux
 ax = Axis(fig[1, 1]; title = "",  ylabel = "Latitude [ᵒ]", xlabel = "Heat Flux [PW]")
 latitude = range(15, 75, length = 128)
-lines!(ax, vT_data[:], latitude; color = (:blue, 0.3), label = "Oceananigans")
+lines!(ax, vT_data[:], latitude; color = (:blue, 0.3), label = "OcS")
 scatter!(ax, vT_data[:], latitude; color = (:blue, 0.3), markersize = 1)
 scatter!(ax, ensemble_mean_vT_samples, latitude; color = (:red, 0.3), markersize = 1)
 lines!(ax, ensemble_mean_vT_samples, latitude; color = (:red, 0.3), label = "AI")

@@ -179,6 +179,7 @@ for i in 1:16
 end
 save(pwd() * "/Figures/bslice_2.png", fig)
 
+#=
 fig = Figure(resolution = (1400, 1600)) 
 newlat = range(0, 60, length = 256)
 N = 10
@@ -195,7 +196,7 @@ for i in 1:N^2
     heatmap!(ax, newlat,  zlevels,  masked_field, colormap = :balance, colorrange = (-0.01, 0.01))
 end
 save(pwd() * "/Figures/masked_v.png", fig)
-
+=#
 ##
 #=
 blevels = range(0, 30 * α * g, length = 10)
@@ -272,7 +273,7 @@ save(pwd() * "/Figures/jax_integrated_moc_$(future_year).png", fig)
 
 
 ##
-#=
+
 v̄_data = mean(sorted_vlevels_data, dims = 1)[1, :, :]
 v̄_samples = mean(sorted_vlevels_samples, dims = (1, 4))[1, :, :, 1]
 
@@ -340,4 +341,54 @@ ylims!(extrema(blevels)...)
 hideydecorations!(ax; hiding_options...)
 Colorbar(fig[2, 4],  cm, label = "Sverdrup [m³ s⁻¹]")
 save(pwd() * "/Figures/jax_v_moc_physical_$(future_year).png", fig)
+
+
+
+##
+factor = 125
+fig = Figure(resolution = (8 * factor, 2 * factor))
+ax = Axis(fig[1, 1], xlabel = "Latitude [ᵒ]", ylabel = "Depth [m]", title = "OcS")
+cval = maximum(abs.(MOC_data))
+lat = range(15, 75, length = 128)
+contour_levels = range(-cval, cval, length = 30)
+std_levels = range(0, 8, length = 9)
+contourf!(ax, lat, blevels, MOC_data, colormap = :balance, levels = contour_levels)
+xlims!(extrema(lat)...)
+ylims!(extrema(blevels)...)
+# lines!(ax, lat, b_surf, linewidth = 2, color=:black, linestyle=:dash)
+
+ax = Axis(fig[1, 2], xlabel = "Latitude [ᵒ]", ylabel = "Depth [m]", title = "AI Mean")
+contourf!(ax, lat, blevels, MOC_mean, colormap = :balance, levels = contour_levels)
+xlims!(extrema(lat)...)
+ylims!(extrema(blevels)...)
+# lines!(ax, lat, b_surf, linewidth = 2, color=:black, linestyle=:dash)
+hideydecorations!(ax; hiding_options...)
+ax = Axis(fig[1, 3], xlabel = "Latitude [ᵒ]", ylabel = "Depth [m]", title = "Difference")
+cm = contourf!(ax, lat, blevels, MOC_data -MOC_mean, colormap = :balance, levels = contour_levels)
+xlims!(extrema(lat)...)
+ylims!(extrema(blevels)...)
+# lines!(ax, lat, b_surf, linewidth = 2, color=:black, linestyle=:dash)
+hideydecorations!(ax; hiding_options...)
+Colorbar(fig[1, 4],  cm, label = "Sverdrup [m³ s⁻¹]")
+#=
+ax = Axis(fig[2, 1], xlabel = "Latitude [ᵒ]", ylabel = "Depth [m]", title = "AI Sample 1")
+contourf!(ax, lat, blevels, MOC_samples[:, :, 1], colormap = :balance, levels = contour_levels)
+xlims!(extrema(lat)...)
+ylims!(extrema(blevels)...)
+# lines!(ax, lat, b_surf, linewidth = 2, color=:black, linestyle=:dash)
+
+ax = Axis(fig[2, 2], xlabel = "Latitude [ᵒ]", ylabel = "Depth [m]", title = "AI Sample 2")
+contourf!(ax, lat, blevels, MOC_samples[:, :, end], colormap = :balance, levels = contour_levels)
+xlims!(extrema(lat)...)
+ylims!(extrema(blevels)...)
+# lines!(ax, lat, b_surf, linewidth = 2, color=:black, linestyle=:dash)
+hideydecorations!(ax; hiding_options...)
 =#
+ax = Axis(fig[1, 5], xlabel = "Latitude [ᵒ]", ylabel = "Depth [m]", title = "AI Std")
+cm = contourf!(ax, lat, blevels, MOC_std, colormap = :viridis, levels = std_levels)
+xlims!(extrema(lat)...)
+ylims!(extrema(blevels)...)
+# lines!(ax, lat, b_surf, linewidth = 2, color=:white, linestyle=:dash)
+hideydecorations!(ax; hiding_options...)
+Colorbar(fig[1, 6],  cm, label = "Sverdrup [m³ s⁻¹]")
+save(pwd() * "/Figures/jax_v_moc_physical_$(future_year)_2.png", fig)

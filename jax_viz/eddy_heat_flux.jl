@@ -40,7 +40,8 @@ ms = 1
 geometric_factor = cosd.(range(15, 75, length = 128))
 
 for XLast in [128]
-    fig = Figure(resolution = (1000, 500))
+    rfactor = 450
+    fig = Figure(resolution = (2*rfactor, 1*rfactor))
     for i in eachindex(level_indices)
         factor = 1
         level_index = level_indices[i]
@@ -89,14 +90,14 @@ for XLast in [128]
                                   xticks = xticksV[i])
         end
 
-        lines!(ax, mean_zonal_average_samples, latitude; color = (:red, op),  label = L"\text{Generative AI}")
+        lines!(ax, mean_zonal_average_samples, latitude; color = (:red, op),  label = L"\text{AI}")
         
         for qu in [0.6, 0.7, 0.8, 0.9, 1.0]
             δlower = [quantile(zonal_average_samples[i, :], 1-qu) for i in 1:Nlat]
             δupper = [quantile(zonal_average_samples[i, :], qu) for i in 1:Nlat]
             band!(ax, Point.(δlower, latitude), Point.(δupper, latitude); color = (:red, op))
         end
-        lines!(ax, zonal_average,              latitude; color = (:blue, op2), label = L"\text{Ground Truth}", linewidth=2)
+        lines!(ax, zonal_average,              latitude; color = (:blue, op2), label = L"\text{OcS}", linewidth=2)
         if i == 4
             axislegend(ax, position = :lb)
         end
@@ -146,7 +147,7 @@ xticksV = (ticks(vrange[2:end-1]),
            ticks(vrange[2:end-1]), 
            ticks(vrange[2:end-1]))
 
-hrange = [-0.04, -0.02, -0.01, 0, 0.01, 0.02] .* 3
+hrange = [-0.03, -0.02, -0.01, 0, 0.01] .* 4
 xticksH = (ticks(hrange[2:end-1]), 
            ticks(hrange[2:end-1]), 
            ticks(hrange[2:end-1]), 
@@ -154,7 +155,8 @@ xticksH = (ticks(hrange[2:end-1]),
 
 factors = [1, 5, 6, 8]
 for XLast in [128]
-    fig = Figure(resolution = (1000, 500))
+    ar = 450
+    fig = Figure(resolution = (2 * ar, ar))
 
     for i in eachindex(factors)
         level_index = 10
@@ -190,7 +192,7 @@ for XLast in [128]
 
         data_string = @sprintf("%.0f", 2^abs(factor-1))
 
-        Label(fig[0, i], L"\text{Coarse Graining Factor }%$(data_string)\text{ }"; tellwidth=false)
+        Label(fig[0, i], L"\text{Coarse-Graining Factor }%$(data_string)\text{ }"; tellwidth=false)
 
         if i == 1
             ax = Axis(fig[1, i];  ylabel = L"\text{Latitude [}^\circ\text{]}", 
@@ -207,14 +209,14 @@ for XLast in [128]
         end
 
 
-        lines!(ax, mean_zonal_average_samples, latitude; color = (:red, op),  label = L"\text{Generative AI}")
+        lines!(ax, mean_zonal_average_samples, latitude; color = (:red, op),  label = L"\text{AI}")
         
         for qu in [0.6, 0.7, 0.8, 0.9, 1.0]
             δlower = [quantile(zonal_average_samples[i, :], 1-qu) for i in 1:Nlat]
             δupper = [quantile(zonal_average_samples[i, :], qu) for i in 1:Nlat]
             band!(ax, Point.(δlower, latitude), Point.(δupper, latitude); color = (:red, op))
         end
-        lines!(ax, zonal_average,              latitude; color = (:blue, op2), label = L"\text{Ground Truth}", linewidth=2)
+        lines!(ax, zonal_average,              latitude; color = (:blue, op2), label = L"\text{OcS}", linewidth=2)
 
         zonal_mean_flux = (mean(field[1:XLast, :, 2], dims=1) .* mean(field[1:XLast, :, 4], dims=1))[:]
         zonal_average = mean(field[1:XLast, :, 2] .* field[1:XLast, :, 4], dims = 1)[:] .- zonal_mean_flux
@@ -244,13 +246,13 @@ for XLast in [128]
 
 
 
-        lines!(ax, mean_zonal_average_samples ./ 1e6, latitude; color = (:red, op), label = L"\text{Generative AI}")
+        lines!(ax, mean_zonal_average_samples ./ 1e6, latitude; color = (:red, op), label = L"\text{AI}")
         for qu in [0.6, 0.7, 0.8, 0.9, 1.0]
             δlower = [quantile((zonal_average_samples[i, :]) ./ 1e6, 1-qu) for i in 1:Nlat]
             δupper = [quantile((zonal_average_samples[i, :]) ./ 1e6, qu) for i in 1:Nlat]
             band!(ax, Point.(δlower, latitude), Point.(δupper, latitude); color = (:red, op))
         end
-        lines!(ax, zonal_average ./ 1e6,              latitude; color = (:blue, op2), linewidth=2, label = L"\text{Ground Truth}")
+        lines!(ax, zonal_average ./ 1e6,              latitude; color = (:blue, op2), linewidth=2, label = L"\text{OcS}")
         if i == 1
             axislegend(ax, position = :lt)
         end

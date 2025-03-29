@@ -110,8 +110,9 @@ op2 = 0.1
 
 normlabel = ["L1", "L2", "Linfty" ]
 fieldnames = ["U", "V", "W", "T"]
-units = [L"\text{cm/s}", L"\text{cm/s}", L"\mu\text{m/s}", L"^\circ\text{C}"]
-xlabel = L"\text{Coarse-graining level}"
+# units = [L"\text{cm/s}", L"\text{cm/s}", L"\mu\text{m/s}", L"^\circ\text{C}"]
+units = [L"\text{[cm/s]}", L"\text{[cm/s]}", L"\text{[}\mu\text{m/s]}", L"\text{[}^\circ\text{C]}", L"\text{[m]}"]
+xlabel = L"\text{Coarse-Graining Factor}"
 
 title_strings_1 = [L"\text{\textbf{OsC AI Discrepancy U}}",
                    L"\text{\textbf{OsC AI Discrepancy V}}",

@@ -52,10 +52,12 @@ end
 
 
 function field_correlation_data(field1, field2; flatten = true)
+    f1 = field1 .- mean(field1, dims=(1, 2))
+    f2 = field2 .- mean(field2, dims=(1, 2))
     if flatten
-        return [sum(field1[:, :, j] .* field2[:, :, k]) ./ sqrt.(sum(field1[:, :, j] .^2) .* sum(field2[:, :, k] .^2)) for j in 1:Nz, k in 1:Nz]
+        return [sum(f1[:, :, j] .* f2[:, :, k]) ./ sqrt.(sum(f1[:, :, j] .^2) .* sum(f2[:, :, k] .^2)) for j in 1:Nz, k in 1:Nz]
     else
-        return [(sum(field1[:, :, j, :] .* field2[:, :, k, :], dims = (1, 2)) ./ sqrt.(sum(field1[:, :, j, :] .^2, dims = (1, 2)) .* sum(field2[:, :, k, :] .^2, dims = (1, 2))))[:] for j in 1:Nz, k in 1:Nz]
+        return [(sum(f1[:, :, j, :] .* f2[:, :, k, :], dims = (1, 2)) ./ sqrt.(sum(f1[:, :, j, :] .^2, dims = (1, 2)) .* sum(f2[:, :, k, :] .^2, dims = (1, 2))))[:] for j in 1:Nz, k in 1:Nz]
     end
 end
 field_correlation_data(field; flatten = true) = field_correlation_data(field, field; flatten = flatten)
@@ -74,27 +76,28 @@ for i in ProgressBar(1:4)
     push!(sample_shuffle_correlations, field_correlation_data(fields_samples[i][:, :, :, :], fields_samples[i][:, :, :, perm], flatten = false))
 end
 ##
+cg = 0
 colors = [:blue, :orange, :green, :brown]
-label_names = ["u", "v", "w", "T"]
+label_names = ["U", "V", "W", "T"]
 qus = [0.6, 0.7, 0.8, 0.9]
 op = 0.5
 op2 = 0.1
-xbottom = 0.3
+xbottom = 0.0
 xtop = 1.05
-
+vlevel = 15
 factor = 340
 fig = Figure(resolution = (4*factor, 1*factor))
 ax = Axis(fig[1, 1]; title = "OcS Correlation with OcS Surface Field", xlabel = "Correlation", ylabel = "Depth [m]")
 # data
 for i in 1:4
-    scatterlines!(ax, data_correlations[i][Nz, :], zlevels, color = (colors[i], op), label = label_names[i])
+    scatterlines!(ax, data_correlations[i][vlevel, :], zlevels, color = (colors[i], op), label = label_names[i])
 end
 axislegend(ax, position = :lt, orientation = :horizontal)
 xlims!(ax, (xbottom, xtop))
 # samples 
 ax = Axis(fig[1, 2]; title = "AI Correlation with AI Surface Field", xlabel = "Correlation", ylabel = "Depth [m]")
 for i in 1:4
-    val = sample_correlations[i][Nz, :]
+    val = sample_correlations[i][vlevel, :]
     meanvals = [mean(val[j][:]) for j in 1:Nz]
     scatterlines!(ax, meanvals, zlevels, color = (colors[i], op), label = label_names[i], marker = :star6)
     for qu in qus
@@ -136,6 +139,70 @@ hideydecorations!(ax; hiding_options...)
 save("Figures/jax_depth_correlation_$(future_year)_$(cg)_and_ai.png", fig)
 
 ##
+
+cg = 0
+colors = [:blue, :orange, :green, :brown]
+label_names = ["U", "V", "W", "T"]
+qus = [0.6, 0.7, 0.8, 0.9]
+op = 0.5
+op2 = 0.1
+xbottom = 0.0
+xtop = 1.05
+vlevel = 14
+factor = 340
+fig = Figure(resolution = (4*factor, 1*factor))
+ax = Axis(fig[1, 1]; title = "OcS Correlation with OcS Near Surface Field", xlabel = "Correlation", ylabel = "Depth [m]")
+# data
+for i in 1:4
+    scatterlines!(ax, data_correlations[i][vlevel, :], zlevels, color = (colors[i], op), label = label_names[i])
+end
+axislegend(ax, position = :lt, orientation = :horizontal)
+xlims!(ax, (xbottom, xtop))
+# samples 
+ax = Axis(fig[1, 2]; title = "AI Correlation with AI Near Surface Field", xlabel = "Correlation", ylabel = "Depth [m]")
+for i in 1:4
+    val = sample_correlations[i][vlevel, :]
+    meanvals = [mean(val[j][:]) for j in 1:Nz]
+    scatterlines!(ax, meanvals, zlevels, color = (colors[i], op), label = label_names[i], marker = :star6)
+    for qu in qus
+        qu_lower = [quantile(val[j][:], 1-qu) for j in 1:Nz]
+        qu_uppper = [quantile(val[j][:], qu) for j in 1:Nz]
+        band!(ax, Point.(qu_lower, zlevels), Point.(qu_uppper, zlevels); color = (colors[i], op2))
+    end
+end
+xlims!(ax, (xbottom, xtop))
+hideydecorations!(ax; hiding_options...)
+
+ax = Axis(fig[1, 3]; title = "AI Correlation with OcS", xlabel = "Correlation", ylabel = "Depth [m]")
+for i in 1:4
+    val = [sample_data_correlations[i][j, j] for j in 1:Nz]
+    meanvals = [mean(val[j][:]) for j in 1:Nz]
+    scatterlines!(ax, meanvals, zlevels, color = (colors[i], op), label = label_names[i], marker = :hexagon)
+    for qu in qus
+        qu_lower = [quantile(val[j][:], 1-qu) for j in 1:Nz]
+        qu_uppper = [quantile(val[j][:], qu) for j in 1:Nz]
+        band!(ax, Point.(qu_lower, zlevels), Point.(qu_uppper, zlevels); color = (colors[i], op2))
+    end
+end
+xlims!(ax, (xbottom, xtop))
+hideydecorations!(ax; hiding_options...)
+
+ax = Axis(fig[1, 4]; title = "AI Shuffle Correlation", xlabel = "Correlation", ylabel = "Depth [m]")
+for i in 1:4
+    val = [sample_shuffle_correlations[i][j, j] for j in 1:Nz]
+    meanvals = [mean(val[j][:]) for j in 1:Nz]
+    scatterlines!(ax, meanvals, zlevels, color = (colors[i], op), label = label_names[i], marker = :xcross)
+    for qu in qus
+        qu_lower = [quantile(val[j][:], 1-qu) for j in 1:Nz]
+        qu_uppper = [quantile(val[j][:], qu) for j in 1:Nz]
+        band!(ax, Point.(qu_lower, zlevels), Point.(qu_uppper, zlevels); color = (colors[i], op2))
+    end
+end
+xlims!(ax, (xbottom, xtop))
+hideydecorations!(ax; hiding_options...)
+save("Figures/jax_depth_correlation_$(future_year)_$(cg)_and_ai_ns.png", fig)
+
+##
 cg = 7
 for level in ProgressBar(1:15)
     (; ground_truth, samples, mu, sigma) = jax_field(level, :u, future_year; file_string, cg)
@@ -167,12 +234,12 @@ end
 ##
 
 colors = [:blue, :orange, :green, :brown]
-label_names = ["u", "v", "w", "T"]
+label_names = ["U", "V", "W", "T"]
 qus = [0.6, 0.7, 0.8, 0.9]
 op = 0.5
 op2 = 0.1
-
-xbottom = 0.0
+vlevel = 15
+xbottom = -0.1
 xtop = 1.10
 
 factor = 340
@@ -180,14 +247,14 @@ fig = Figure(resolution = (6*factor, 1*factor))
 ax = Axis(fig[1, 1]; title = "OcS Correlation with OcS Surface Field", xlabel = "Correlation", ylabel = "Depth [m]")
 # data
 for i in 1:4
-    scatterlines!(ax, data_correlations[i][Nz, :], zlevels, color = (colors[i], op), label = label_names[i])
+    scatterlines!(ax, data_correlations[i][vlevel, :], zlevels, color = (colors[i], op), label = label_names[i])
 end
 axislegend(ax, position = :lt, orientation = :horizontal)
 xlims!(ax, (xbottom, xtop))
 # samples 
 ax = Axis(fig[1, 2]; title = "AI Correlation with AI Surface Field", xlabel = "Correlation", ylabel = "Depth [m]")
 for i in 1:4
-    val = sample_correlations[i][Nz, :]
+    val = sample_correlations[i][vlevel, :]
     meanvals = [mean(val[j][:]) for j in 1:Nz]
     scatterlines!(ax, meanvals, zlevels, color = (colors[i], op), label = label_names[i], marker = :star6)
     for qu in qus
@@ -257,3 +324,191 @@ hideydecorations!(ax; hiding_options...)
 
 
 save("Figures/jax_depth_correlation_$(future_year)_ai_more.png", fig)
+
+##
+colors = [:blue, :orange, :green, :brown]
+label_names = ["U", "V", "W", "T"]
+qus = [0.6, 0.7, 0.8, 0.9]
+op = 0.5
+op2 = 0.1
+vlevel = 15
+xbottom = -0.1
+xtop = 1.10
+
+factor = 340
+fig = Figure(resolution = (3*factor, 2*factor))
+ax = Axis(fig[1, 1]; title = "OcS Correlation with OcS Surface Field", xlabel = "Correlation", ylabel = "Depth [m]")
+# data
+for i in 1:4
+    scatterlines!(ax, data_correlations[i][vlevel, :], zlevels, color = (colors[i], op), label = label_names[i])
+end
+axislegend(ax, position = :lt, orientation = :horizontal)
+xlims!(ax, (xbottom, xtop))
+# samples 
+ax = Axis(fig[2, 1]; title = "AI Correlation with AI Surface Field", xlabel = "Correlation", ylabel = "Depth [m]")
+for i in 1:4
+    val = sample_correlations[i][vlevel, :]
+    meanvals = [mean(val[j][:]) for j in 1:Nz]
+    scatterlines!(ax, meanvals, zlevels, color = (colors[i], op), label = label_names[i], marker = :star6)
+    for qu in qus
+        qu_lower = [quantile(val[j][:], 1-qu) for j in 1:Nz]
+        qu_uppper = [quantile(val[j][:], qu) for j in 1:Nz]
+        band!(ax, Point.(qu_lower, zlevels), Point.(qu_uppper, zlevels); color = (colors[i], op2))
+    end
+end
+xlims!(ax, (xbottom, xtop))
+# hideydecorations!(ax; hiding_options...)
+
+ax = Axis(fig[1, 2]; title = "AI Correlation with OcS: Full SSH", xlabel = "Correlation", ylabel = "Depth [m]")
+for i in 1:4
+    val = [sample_data_correlations[i][j, j] for j in 1:Nz]
+    meanvals = [mean(val[j][:]) for j in 1:Nz]
+    scatterlines!(ax, meanvals, zlevels, color = (colors[i], op), label = label_names[i], marker = :hexagon)
+    for qu in qus
+        qu_lower = [quantile(val[j][:], 1-qu) for j in 1:Nz]
+        qu_uppper = [quantile(val[j][:], qu) for j in 1:Nz]
+        band!(ax, Point.(qu_lower, zlevels), Point.(qu_uppper, zlevels); color = (colors[i], op2))
+    end
+end
+xlims!(ax, (xbottom, xtop))
+hideydecorations!(ax; hiding_options...)
+
+ax = Axis(fig[1, 3]; title = "AI Shuffle Correlation: Full SSH", xlabel = "Correlation", ylabel = "Depth [m]")
+for i in 1:4
+    val = [sample_shuffle_correlations[i][j, j] for j in 1:Nz]
+    meanvals = [mean(val[j][:]) for j in 1:Nz]
+    scatterlines!(ax, meanvals, zlevels, color = (colors[i], op), label = label_names[i], marker = :xcross)
+    for qu in qus
+        qu_lower = [quantile(val[j][:], 1-qu) for j in 1:Nz]
+        qu_uppper = [quantile(val[j][:], qu) for j in 1:Nz]
+        band!(ax, Point.(qu_lower, zlevels), Point.(qu_uppper, zlevels); color = (colors[i], op2))
+    end
+end
+xlims!(ax, (xbottom, xtop))
+hideydecorations!(ax; hiding_options...)
+
+ax = Axis(fig[2, 2]; title = "AI Correlation with OcS: SSH Mean", xlabel = "Correlation", ylabel = "Depth [m]")
+for i in 1:4
+    val = [sample_data_correlations[i+4][j, j] for j in 1:Nz]
+    meanvals = [mean(val[j][:]) for j in 1:Nz]
+    scatterlines!(ax, meanvals, zlevels, color = (colors[i], op), label = label_names[i], marker = :hexagon)
+    for qu in qus
+        qu_lower = [quantile(val[j][:], 1-qu) for j in 1:Nz]
+        qu_uppper = [quantile(val[j][:], qu) for j in 1:Nz]
+        band!(ax, Point.(qu_lower, zlevels), Point.(qu_uppper, zlevels); color = (colors[i], op2))
+    end
+end
+xlims!(ax, (xbottom, xtop))
+hideydecorations!(ax; hiding_options...)
+
+ax = Axis(fig[2, 3]; title = "AI Shuffle Correlation: SSH Mean", xlabel = "Correlation", ylabel = "Depth [m]")
+for i in 1:4
+    val = [sample_shuffle_correlations[i+4][j, j] for j in 1:Nz]
+    meanvals = [mean(val[j][:]) for j in 1:Nz]
+    scatterlines!(ax, meanvals, zlevels, color = (colors[i], op), label = label_names[i], marker = :xcross)
+    for qu in qus
+        qu_lower = [quantile(val[j][:], 1-qu) for j in 1:Nz]
+        qu_uppper = [quantile(val[j][:], qu) for j in 1:Nz]
+        band!(ax, Point.(qu_lower, zlevels), Point.(qu_uppper, zlevels); color = (colors[i], op2))
+    end
+end
+xlims!(ax, (xbottom, xtop))
+hideydecorations!(ax; hiding_options...)
+
+
+save("Figures/jax_depth_correlation_$(future_year)_ai_more_r.png", fig)
+
+
+##
+
+colors = [:blue, :orange, :green, :brown]
+label_names = ["U", "V", "W", "T"]
+qus = [0.6, 0.7, 0.8, 0.9]
+op = 0.5
+op2 = 0.1
+vlevel = 14
+xbottom = -0.1
+xtop = 1.10
+
+factor = 340
+fig = Figure(resolution = (6*factor, 1*factor))
+ax = Axis(fig[1, 1]; title = "OcS Correlation with OcS Near Surface Field", xlabel = "Correlation", ylabel = "Depth [m]")
+# data
+for i in 1:4
+    scatterlines!(ax, data_correlations[i][vlevel, :], zlevels, color = (colors[i], op), label = label_names[i])
+end
+axislegend(ax, position = :lt, orientation = :horizontal)
+xlims!(ax, (xbottom, xtop))
+# samples 
+ax = Axis(fig[1, 2]; title = "AI Correlation with AI Near Surface Field", xlabel = "Correlation", ylabel = "Depth [m]")
+for i in 1:4
+    val = sample_correlations[i][vlevel, :]
+    meanvals = [mean(val[j][:]) for j in 1:Nz]
+    scatterlines!(ax, meanvals, zlevels, color = (colors[i], op), label = label_names[i], marker = :star6)
+    for qu in qus
+        qu_lower = [quantile(val[j][:], 1-qu) for j in 1:Nz]
+        qu_uppper = [quantile(val[j][:], qu) for j in 1:Nz]
+        band!(ax, Point.(qu_lower, zlevels), Point.(qu_uppper, zlevels); color = (colors[i], op2))
+    end
+end
+xlims!(ax, (xbottom, xtop))
+hideydecorations!(ax; hiding_options...)
+
+ax = Axis(fig[1, 3]; title = "AI Correlation with OcS: Full SSH", xlabel = "Correlation", ylabel = "Depth [m]")
+for i in 1:4
+    val = [sample_data_correlations[i][j, j] for j in 1:Nz]
+    meanvals = [mean(val[j][:]) for j in 1:Nz]
+    scatterlines!(ax, meanvals, zlevels, color = (colors[i], op), label = label_names[i], marker = :hexagon)
+    for qu in qus
+        qu_lower = [quantile(val[j][:], 1-qu) for j in 1:Nz]
+        qu_uppper = [quantile(val[j][:], qu) for j in 1:Nz]
+        band!(ax, Point.(qu_lower, zlevels), Point.(qu_uppper, zlevels); color = (colors[i], op2))
+    end
+end
+xlims!(ax, (xbottom, xtop))
+hideydecorations!(ax; hiding_options...)
+
+ax = Axis(fig[1, 4]; title = "AI Shuffle Correlation: Full SSH", xlabel = "Correlation", ylabel = "Depth [m]")
+for i in 1:4
+    val = [sample_shuffle_correlations[i][j, j] for j in 1:Nz]
+    meanvals = [mean(val[j][:]) for j in 1:Nz]
+    scatterlines!(ax, meanvals, zlevels, color = (colors[i], op), label = label_names[i], marker = :xcross)
+    for qu in qus
+        qu_lower = [quantile(val[j][:], 1-qu) for j in 1:Nz]
+        qu_uppper = [quantile(val[j][:], qu) for j in 1:Nz]
+        band!(ax, Point.(qu_lower, zlevels), Point.(qu_uppper, zlevels); color = (colors[i], op2))
+    end
+end
+xlims!(ax, (xbottom, xtop))
+hideydecorations!(ax; hiding_options...)
+
+ax = Axis(fig[1, 5]; title = "AI Correlation with OcS: SSH Mean", xlabel = "Correlation", ylabel = "Depth [m]")
+for i in 1:4
+    val = [sample_data_correlations[i+4][j, j] for j in 1:Nz]
+    meanvals = [mean(val[j][:]) for j in 1:Nz]
+    scatterlines!(ax, meanvals, zlevels, color = (colors[i], op), label = label_names[i], marker = :hexagon)
+    for qu in qus
+        qu_lower = [quantile(val[j][:], 1-qu) for j in 1:Nz]
+        qu_uppper = [quantile(val[j][:], qu) for j in 1:Nz]
+        band!(ax, Point.(qu_lower, zlevels), Point.(qu_uppper, zlevels); color = (colors[i], op2))
+    end
+end
+xlims!(ax, (xbottom, xtop))
+hideydecorations!(ax; hiding_options...)
+
+ax = Axis(fig[1, 6]; title = "AI Shuffle Correlation: SSH Mean", xlabel = "Correlation", ylabel = "Depth [m]")
+for i in 1:4
+    val = [sample_shuffle_correlations[i+4][j, j] for j in 1:Nz]
+    meanvals = [mean(val[j][:]) for j in 1:Nz]
+    scatterlines!(ax, meanvals, zlevels, color = (colors[i], op), label = label_names[i], marker = :xcross)
+    for qu in qus
+        qu_lower = [quantile(val[j][:], 1-qu) for j in 1:Nz]
+        qu_uppper = [quantile(val[j][:], qu) for j in 1:Nz]
+        band!(ax, Point.(qu_lower, zlevels), Point.(qu_uppper, zlevels); color = (colors[i], op2))
+    end
+end
+xlims!(ax, (xbottom, xtop))
+hideydecorations!(ax; hiding_options...)
+
+
+save("Figures/jax_depth_correlation_$(future_year)_ai_more_ns.png", fig)
