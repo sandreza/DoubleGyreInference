@@ -14,7 +14,7 @@ z_centers(k) = (z_faces(k) + z_faces(k+1) ) / 2
 data_directory = "/orcd/data/raffaele/001/sandre/OceananigansData/"
 
 N1 = 1126 # start of the training data
-N2 = 3645 # end of the training data
+N2 = 1126 + 3400 # end of the training data
 
 hfile = h5open(analysis_directory * "convergence_with_depth_$casevar.hdf5", "r") 
 averages = read(hfile["averages"] )
@@ -65,7 +65,7 @@ levels = [3, collect(9:14)...] # with respect to the original indices
 fig = Figure(resolution = (1000, 750), fontsize=20)
 state_index = 1
 ylabels = [L"\text{U ms}^{-1}", L"\text{V ms}^{-1}", L"\text{W ms}^{-1}", L"\text{T }^\circ\text{C}"]
-end_index = (size(averages, 1) - N2 ) ÷ 2 + N2
+end_index = size(averages, 1) 
 chosen_levels = levels[1:2:end]
 
 hiding_options = (; label = true, ticklabels = true, ticks = false, grid = false, minorgrid = false, minorticks = false)
@@ -86,9 +86,9 @@ for (i, level) in enumerate(chosen_levels)
             title = ""
         end
         if state_index == 4
-            xticks = ([0, 100, 200, 300], [L"0", L"100", L"200", L"300"])
+            xticks = ([0, 100, 200, 300, 400], [L"0", L"100", L"200", L"300", L"400"]) # for temperature, we want to show the xticks as months
         else
-            xticks = ([0, 100, 200, 300], ["", "", "", ""])
+            xticks = ([0, 100, 200, 300, 400], ["", "", "", "", ""])
         end
 
         if state_index == 1 || state_index == 2
