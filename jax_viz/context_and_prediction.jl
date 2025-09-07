@@ -105,11 +105,16 @@ for ii in 1:4
     Colorbar(fig[ii, 3 + shift],  hm, label = label_strings[ii])
     ax = Axis(fig[ii, 4 + shift]; title = titles[6])
     hidedecorations!(ax)
-    hm = heatmap!(ax,  lons, lats, abs.(fields[ii] - mean(samples[ii][:, :, :, cg + 1], dims = 3)[:, :, 1]), colorrange = (0, crange[ii]/4), colormap = :viridis)
+    if ii == 4
+        new_factor = 10 
+    else 
+        new_factor = 1
+    end
+    hm = heatmap!(ax,  lons, lats, abs.(fields[ii] - mean(samples[ii][:, :, :, cg + 1], dims = 3)[:, :, 1]), colorrange = (0, crange[ii]/4 / new_factor), colormap = :viridis)
     ax = Axis(fig[ii, 5 + shift]; title = titles[7])
     hidedecorations!(ax)
     std_field = std(samples[ii][:, :, :, cg + 1], dims = 3)[:, :, 1]
-    hm = heatmap!(ax, lons, lats, std_field, colorrange = (0, crange[ii]/4), colormap = :viridis)
+    hm = heatmap!(ax, lons, lats, std_field, colorrange = (0, crange[ii]/4/new_factor), colormap = :viridis)
     Colorbar(fig[ii, 6 + shift], hm, label = label_strings[ii])
 end
 save("Figures/test.png", fig)  # Save the figure to a file
